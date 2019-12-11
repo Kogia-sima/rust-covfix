@@ -120,7 +120,6 @@ impl CoverageWriter for CoberturaParser {
                             }
                             let covs = covs.unwrap();
 
-                            // TODO: write coverages
                             let line_rate = format!("{:.3}", covs.line_rate() * 100.0);
 
                             let mut t2 = t.clone();
