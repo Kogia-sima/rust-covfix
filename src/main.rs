@@ -1,13 +1,9 @@
-pub mod common;
-pub mod cobertura;
-pub mod fix;
-
 use std::env;
 use std::path::PathBuf;
 use std::process;
 
-use cobertura::CoberturaParser;
-use common::{CoverageReader, CoverageWriter};
+use kcov_coverage_fix::{CoverageReader, CoverageWriter, fix_coverage};
+use kcov_coverage_fix::CoberturaParser;
 
 #[cfg(not(windows))]
 const COV_DIR: &str = "target/cov";
@@ -31,7 +27,7 @@ fn main() {
 
     let cf = CoberturaParser::new();
     let mut coverage = cf.load_coverages(&file);
-    fix::fix_coverage(&mut coverage);
+    fix_coverage(&mut coverage);
     cf.save_coverages(&file, &coverage);
 }
 
