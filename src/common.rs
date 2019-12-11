@@ -104,16 +104,34 @@ pub type PackageCoverage = HashMap<PathBuf, FileCoverage>;
 
 #[cfg(test)]
 mod tests {
-    use super::SourceCode;
+    use super::{SourceCode, LineCoverage, TotalCoverage};
 
     #[test]
-    fn test1() {
+    fn source_code_tests() {
         let s = SourceCode::new(
             "apple\nbanana"
         );
-        let mut it = s.lines();
+        let mut it = s.lines().clone();
         assert_eq!(it.next(), Some("apple"));
         assert_eq!(it.next(), Some("banana"));
         assert_eq!(it.next(), None);
+    }
+
+    #[test]
+    fn total_coverage() {
+        assert_eq!(LineCoverage::NotExecutable.line_rate(), 0.0);
+        assert_eq!(LineCoverage::NotExecutable.branch_rate(), 1.0);
+        assert_eq!(LineCoverage::NotCovered.line_rate(), 0.0);
+        assert_eq!(LineCoverage::Covered.line_rate(), 1.0);
+        assert_eq!(vec![
+            LineCoverage::NotCovered,
+            LineCoverage::NotCovered,
+            LineCoverage::NotCovered
+        ].line_rate(), 0.0);
+        assert_eq!(vec![
+            LineCoverage::NotCovered,
+            LineCoverage::Covered,
+            LineCoverage::NotCovered
+        ].line_rate(), 1.0 / 3.0);
     }
 }
