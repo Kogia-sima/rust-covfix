@@ -9,7 +9,7 @@ pub fn fix_coverage(data: &mut PackageCoverage) {
             r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
         ).unwrap(),
         Regex::new(
-            r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)$"
+            r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$"
         ).unwrap()
     ];
 
@@ -25,5 +25,69 @@ pub fn fix_coverage(data: &mut PackageCoverage) {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+    use crate::common::{PackageCoverage, LineCoverage};
+    use super::fix_coverage;
+
+    fn create_file_with_contents(content: &[u8]) -> NamedTempFile {
+        let mut f = NamedTempFile::new().expect("Failed to create a temporary file.");
+        f.write_all(content).unwrap();
+        f
+    }
+
+    #[test]
+    fn closing_branckets() {
+        let f = create_file_with_contents(b"\
+            if a > 0 {\n\
+                b = a;\n\
+            } else {\n\
+                b = -a;\n\
+            }\n\
+        ");
+        let p = f.path();
+
+        let fc = vec![LineCoverage::NotCovered; 5];
+
+        let mut pc = PackageCoverage::new();
+        pc.insert(p.to_owned(), fc);
+
+        fix_coverage(&mut pc);
+
+        assert_eq!(pc.get(p), Some(&vec![
+            LineCoverage::NotCovered,
+            LineCoverage::NotCovered,
+            LineCoverage::NotExecutable,
+            LineCoverage::NotCovered,
+            LineCoverage::NotExecutable,
+        ]));
+    }
+
+    #[test]
+    fn struct_declaration() {
+        let f = create_file_with_contents(b"\
+            pub struct Parser<R: BufRead> {\n\
+                reader: R
+            }\n\
+        ");
+        let p = f.path();
+
+        let fc = vec![LineCoverage::NotCovered; 3];
+
+        let mut pc = PackageCoverage::new();
+        pc.insert(p.to_owned(), fc);
+
+        fix_coverage(&mut pc);
+
+        assert_eq!(pc.get(p), Some(&vec![
+            LineCoverage::NotExecutable,
+            LineCoverage::NotCovered,
+            LineCoverage::NotExecutable,
+        ]));
     }
 }
