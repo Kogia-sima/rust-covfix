@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 [[package]]
 name = "kcov-coverage-fix"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "quick-xml 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
