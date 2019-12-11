@@ -2,8 +2,8 @@ use std::env;
 use std::path::PathBuf;
 use std::process;
 
-use kcov_coverage_fix::{CoverageReader, CoverageWriter, fix_coverage};
 use kcov_coverage_fix::CoberturaParser;
+use kcov_coverage_fix::{fix_coverage, CoverageReader, CoverageWriter};
 
 #[cfg(not(windows))]
 const COV_DIR: &str = "target/cov";
@@ -32,7 +32,7 @@ fn main() {
 }
 
 struct Arguments {
-    root: Option<PathBuf>
+    root: Option<PathBuf>,
 }
 
 fn process_args() -> Arguments {
@@ -46,7 +46,7 @@ fn process_args() -> Arguments {
             "-v" | "--version" => {
                 println!("v{}", env!("CARGO_PKG_VERSION"));
                 process::exit(0);
-            },
+            }
             "--root" => {
                 if let Some(arg) = args.next() {
                     if !arg.starts_with("-") {
@@ -57,7 +57,7 @@ fn process_args() -> Arguments {
 
                 eprintln!("--root option requires an argument.");
                 show_usage();
-            },
+            }
             invalid_arg => {
                 eprintln!("invalid argument: \"{}\"\n", invalid_arg);
                 show_usage();
@@ -97,7 +97,7 @@ fn search_coverage_file(mut p: PathBuf) -> PathBuf {
 fn find_cov_dir() -> PathBuf {
     let mut path = env::current_dir().expect("cannot detect the current directory.");
     path.push(COV_DIR);
-    
+
     if path.is_dir() {
         return path;
     }

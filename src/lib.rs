@@ -1,7 +1,7 @@
+mod cobertura;
 mod common;
 mod fix;
-mod cobertura;
 
+pub use cobertura::*;
 pub use common::*;
 pub use fix::*;
-pub use cobertura::*;

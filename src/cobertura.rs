@@ -1,5 +1,5 @@
 use quick_xml::{
-    events::{attributes::Attribute as XMLAttribute, BytesStart, BytesEnd, Event as XMLEvent},
+    events::{attributes::Attribute as XMLAttribute, BytesEnd, BytesStart, Event as XMLEvent},
     Reader as XMLReader, Writer as XMLWriter,
 };
 use std::borrow::Cow;
@@ -52,7 +52,8 @@ impl CoverageReader for CoberturaParser {
                             let path = path.unwrap();
 
                             let content = fs::read_to_string(&path).unwrap();
-                            let mut coverages = vec![LineCoverage::NotExecutable; content.lines().count()];
+                            let mut coverages =
+                                vec![LineCoverage::NotExecutable; content.lines().count()];
 
                             fetch_line_coverages(&mut reader, &mut coverages);
 
@@ -101,90 +102,81 @@ impl CoverageWriter for CoberturaParser {
                         source_dirs.push(path)
                     }
                 }
-                Ok(XMLEvent::Start(ref t)) => {
-                    match t.local_name() {
-                        b"source" => {
-                            inside_sources_tag = true;
-                        }
-                        b"class" => {
-                            reader.read_to_end(b"class", &mut Vec::new()).unwrap();
+                Ok(XMLEvent::Start(ref t)) => match t.local_name() {
+                    b"source" => {
+                        inside_sources_tag = true;
+                    }
+                    b"class" => {
+                        reader.read_to_end(b"class", &mut Vec::new()).unwrap();
 
-                            let covs = extract_filename_from_tag(t).and_then(|f| {
-                                find_file_in_dirs(&source_dirs, &f)
-                            }).and_then(|p| {
-                                data.get(&p)
-                            });
+                        let covs = extract_filename_from_tag(t)
+                            .and_then(|f| find_file_in_dirs(&source_dirs, &f))
+                            .and_then(|p| data.get(&p));
 
-                            if covs.is_none() {
-                                continue;
-                            }
-                            let covs = covs.unwrap();
-
-                            let line_rate = format!("{:.3}", covs.line_rate() * 100.0);
-
-                            let mut t2 = t.clone();
-                            let mut attrs = t.attributes();
-                            let attrs = attrs.with_checks(false).filter_map(|v| {
-                                if let Ok(attr) = v {
-                                    if attr.key == b"line-rate" {
-                                        Some(XMLAttribute {
-                                            key: b"line-rate",
-                                            value: Cow::from(line_rate.as_bytes())
-                                        })
-                                    } else {
-                                        Some(attr)
-                                    }
-                                } else {
-                                    None
-                                }
-                            });
-
-                            t2.clear_attributes();
-                            t2.extend_attributes(attrs);
-
-                            writer.write_event(XMLEvent::Start(t2)).unwrap();
-                            writer.write(b"\n").unwrap();
-
-                            let elem = BytesStart::borrowed(b"lines", 5);
-                            let event = XMLEvent::Start(elem);
-                            writer.write_event(event).unwrap();
-                            writer.write(b"\n").unwrap();
-
-                            for (i, cov) in covs.into_iter().enumerate() {
-                                let hits = match cov {
-                                    LineCoverage::Covered => {
-                                        1
-                                    },
-                                    LineCoverage::NotCovered => {
-                                        0
-                                    },
-                                    LineCoverage::NotExecutable => {
-                                        continue;
-                                    }
-                                };
-
-                                let content = format!("line number=\"{}\" hits=\"{}\"",
-                                                      i + 1, hits);
-                                let elem = BytesStart::borrowed(content.as_bytes(), 4);
-                                let event = XMLEvent::Empty(elem);
-                                writer.write_event(event).unwrap();
-                                writer.write(b"\n").unwrap();
-                            }
-
-                            let elem = BytesEnd::borrowed(b"lines");
-                            let event = XMLEvent::End(elem);
-                            writer.write_event(event).unwrap();
-                            writer.write(b"\n").unwrap();
-
-                            let elem = BytesEnd::borrowed(b"class");
-                            let event = XMLEvent::End(elem);
-                            writer.write_event(event).unwrap();
-
+                        if covs.is_none() {
                             continue;
                         }
-                        _ => {}
+                        let covs = covs.unwrap();
+
+                        let line_rate = format!("{:.3}", covs.line_rate() * 100.0);
+
+                        let mut t2 = t.clone();
+                        let mut attrs = t.attributes();
+                        let attrs = attrs.with_checks(false).filter_map(|v| {
+                            if let Ok(attr) = v {
+                                if attr.key == b"line-rate" {
+                                    Some(XMLAttribute {
+                                        key: b"line-rate",
+                                        value: Cow::from(line_rate.as_bytes()),
+                                    })
+                                } else {
+                                    Some(attr)
+                                }
+                            } else {
+                                None
+                            }
+                        });
+
+                        t2.clear_attributes();
+                        t2.extend_attributes(attrs);
+
+                        writer.write_event(XMLEvent::Start(t2)).unwrap();
+                        writer.write(b"\n").unwrap();
+
+                        let elem = BytesStart::borrowed(b"lines", 5);
+                        let event = XMLEvent::Start(elem);
+                        writer.write_event(event).unwrap();
+                        writer.write(b"\n").unwrap();
+
+                        for (i, cov) in covs.into_iter().enumerate() {
+                            let hits = match cov {
+                                LineCoverage::Covered => 1,
+                                LineCoverage::NotCovered => 0,
+                                LineCoverage::NotExecutable => {
+                                    continue;
+                                }
+                            };
+
+                            let content = format!("line number=\"{}\" hits=\"{}\"", i + 1, hits);
+                            let elem = BytesStart::borrowed(content.as_bytes(), 4);
+                            let event = XMLEvent::Empty(elem);
+                            writer.write_event(event).unwrap();
+                            writer.write(b"\n").unwrap();
+                        }
+
+                        let elem = BytesEnd::borrowed(b"lines");
+                        let event = XMLEvent::End(elem);
+                        writer.write_event(event).unwrap();
+                        writer.write(b"\n").unwrap();
+
+                        let elem = BytesEnd::borrowed(b"class");
+                        let event = XMLEvent::End(elem);
+                        writer.write_event(event).unwrap();
+
+                        continue;
                     }
-                }
+                    _ => {}
+                },
                 Ok(XMLEvent::End(ref t)) => match t.local_name() {
                     b"sources" => {
                         inside_sources_tag = false;
@@ -212,10 +204,7 @@ impl CoberturaParser {
     }
 }
 
-fn fetch_line_coverages(
-    reader: &mut XMLReader<&[u8]>,
-    coverages: &mut Vec<LineCoverage>,
-) {
+fn fetch_line_coverages(reader: &mut XMLReader<&[u8]>, coverages: &mut Vec<LineCoverage>) {
     let mut buf = Vec::new();
 
     loop {
@@ -236,7 +225,7 @@ fn fetch_line_coverages(
             Ok(XMLEvent::Eof) => {
                 break;
             }
-            _ => {},
+            _ => {}
         }
     }
 }
@@ -314,7 +303,7 @@ fn path_is_valid(bytes: &[u8]) -> bool {
         if *b >= 0x20u8 {
             return true;
         }
-    };
+    }
 
     false
 }
