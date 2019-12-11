@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 #[cfg(unix)]
 use std::os::unix::ffi::OsStringExt;
 
-use crate::common::{CoverageReader, CoverageWriter, LineCoverage, SourceFile, PackageCoverage, TotalCoverage};
+use crate::common::{CoverageReader, CoverageWriter, LineCoverage, PackageCoverage, TotalCoverage};
 
 pub struct CoberturaParser {}
 
@@ -51,8 +51,8 @@ impl CoverageReader for CoberturaParser {
                             }
                             let path = path.unwrap();
 
-                            let source = SourceFile::new(&path);
-                            let mut coverages = vec![LineCoverage::NotExecutable; source.total_lines()];
+                            let content = fs::read_to_string(&path).unwrap();
+                            let mut coverages = vec![LineCoverage::NotExecutable; content.lines().count()];
 
                             fetch_line_coverages(&mut reader, &mut coverages);
 

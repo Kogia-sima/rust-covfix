@@ -1,6 +1,7 @@
+use std::fs;
 use regex::Regex;
 
-use crate::common::{PackageCoverage, LineCoverage, SourceFile};
+use crate::common::{PackageCoverage, LineCoverage, SourceCode};
 
 pub fn fix_coverage(data: &mut PackageCoverage) {
     let non_executable_lines = vec![
@@ -13,10 +14,11 @@ pub fn fix_coverage(data: &mut PackageCoverage) {
     ];
 
     for (file, covs) in data.iter_mut() {
-        let source = SourceFile::new(file);
+        let content = fs::read_to_string(file).unwrap();
+        let source = SourceCode::new(content);
 
         debug_assert!(source.total_lines() == covs.len(), "Internal error: line length did not match");
-        for (line, cov) in source.lines().into_iter().zip(covs) {
+        for (line, cov) in source.lines().zip(covs) {
             if *cov == LineCoverage::NotCovered {
                 if non_executable_lines.iter().any(|r| r.is_match(line)) {
                     *cov = LineCoverage::NotExecutable;
