@@ -19,7 +19,7 @@ pub fn fix_coverage(data: &mut PackageCoverage) {
             "Internal error: line length did not match"
         );
         for (line, cov) in source.lines().zip(covs) {
-            if *cov == LineCoverage::NotCovered {
+            if *cov != LineCoverage::NotExecutable {
                 if non_executable_lines.iter().any(|r| r.is_match(line)) {
                     *cov = LineCoverage::NotExecutable;
                 }
