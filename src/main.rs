@@ -23,9 +23,13 @@ fn main() {
     } else {
         find_cov_dir()
     };
-    let file = search_coverage_file(cov_dir);
+    let file = search_coverage_file(cov_dir.clone());
 
-    let cf = CoberturaParser::new();
+    let mut root = cov_dir;
+    root.pop();
+    root.pop();
+
+    let cf = CoberturaParser::new(root);
     let mut coverage = cf.load_coverages(&file);
     fix_coverage(&mut coverage);
     cf.save_coverages(&file, &coverage);

@@ -12,7 +12,9 @@ use std::os::unix::ffi::OsStringExt;
 
 use crate::common::{CoverageReader, CoverageWriter, LineCoverage, PackageCoverage, TotalCoverage};
 
-pub struct CoberturaParser {}
+pub struct CoberturaParser {
+    root: PathBuf,
+}
 
 impl CoverageReader for CoberturaParser {
     fn load_coverages(&self, path: &Path) -> PackageCoverage {
@@ -45,7 +47,7 @@ impl CoverageReader for CoberturaParser {
                                 continue;
                             }
 
-                            let path = find_file_in_dirs(&source_dirs, &filename.unwrap());
+                            let path = self.find_file_in_dirs(&source_dirs, &filename.unwrap());
                             if path.is_none() {
                                 continue;
                             }
@@ -110,7 +112,7 @@ impl CoverageWriter for CoberturaParser {
                         reader.read_to_end(b"class", &mut Vec::new()).unwrap();
 
                         let covs = extract_filename_from_tag(t)
-                            .and_then(|f| find_file_in_dirs(&source_dirs, &f))
+                            .and_then(|f| self.find_file_in_dirs(&source_dirs, &f))
                             .and_then(|p| data.get(&p));
 
                         if covs.is_none() {
@@ -199,8 +201,29 @@ impl CoverageWriter for CoberturaParser {
 }
 
 impl CoberturaParser {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new<P: Into<PathBuf>>(root: P) -> Self {
+        Self { root: root.into() }
+    }
+
+    fn find_file_in_dirs(&self, dirs: &[PathBuf], filename: &Path) -> Option<PathBuf> {
+        if filename.is_file() {
+            return Some(filename.to_owned());
+        }
+
+        for ref dir in dirs {
+            let path = if dir.is_absolute() {
+                dir.join(filename)
+            } else {
+                let mut path = self.root.join(dir);
+                path.push(filename);
+                path
+            };
+            if path.is_file() {
+                return Some(path);
+            }
+        }
+
+        None
     }
 }
 
@@ -273,17 +296,6 @@ fn extract_line_coverage_from_tag(tag: &BytesStart) -> (Option<usize>, LineCover
     }
 
     (line, coverage)
-}
-
-fn find_file_in_dirs(dirs: &[PathBuf], filename: &Path) -> Option<PathBuf> {
-    for ref dir in dirs {
-        let path = dir.join(filename);
-        if path.is_file() {
-            return Some(path);
-        }
-    }
-
-    None
 }
 
 #[cfg(unix)]
