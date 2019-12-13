@@ -21,6 +21,10 @@ name = "kcov_coverage_fix"
 path = "src/lib.rs"
 doctest = false
 
+[features]
+default = ["inline"]
+inline = []
+
 [dependencies]
 quick-xml = "0.17.0"
 

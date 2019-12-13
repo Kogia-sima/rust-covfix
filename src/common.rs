@@ -16,14 +16,14 @@ impl SourceCode {
         SourceCode { buffer, lines }
     }
 
-    #[inline]
+    #[cfg_attr(feature = "inline", inline)]
     pub fn lines<'a>(&'a self) -> Lines<'a> {
         Lines {
             inner: (&self.lines).into_iter(),
         }
     }
 
-    #[inline]
+    #[cfg_attr(feature = "inline", inline)]
     pub fn total_lines(&self) -> usize {
         self.lines.len()
     }
@@ -40,7 +40,7 @@ pub struct Lines<'a> {
 impl<'a> Iterator for Lines<'a> {
     type Item = &'a str;
 
-    #[inline]
+    #[cfg_attr(feature = "inline", inline)]
     fn next(&mut self) -> Option<Self::Item> {
         unsafe { self.inner.next().map(|v| &**v) }
     }
@@ -66,7 +66,7 @@ pub enum LineCoverage {
 }
 
 impl TotalCoverage for LineCoverage {
-    #[inline]
+    #[cfg_attr(feature = "inline", inline)]
     fn line_rate(&self) -> f32 {
         if *self == Self::Covered {
             1.0
