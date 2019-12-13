@@ -4,8 +4,8 @@ use std::path::Path;
 mod common;
 use common::WorkSpace;
 
-use kcov_coverage_fix::CoberturaParser;
-use kcov_coverage_fix::{fix_coverage, CoverageReader, CoverageWriter};
+use rust_covfix::CoberturaParser;
+use rust_covfix::{fix_coverage, CoverageReader, CoverageWriter};
 
 fn assert_file_eq(p1: &Path, p2: &Path) {
     let c1 = fs::read_to_string(p1).unwrap_or_else(|_| panic!("Failed to open '{:?}'", p1));

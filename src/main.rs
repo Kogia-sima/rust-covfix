@@ -2,8 +2,8 @@ use std::env;
 use std::path::PathBuf;
 use std::process;
 
-use kcov_coverage_fix::CoberturaParser;
-use kcov_coverage_fix::{fix_coverage, CoverageReader, CoverageWriter};
+use rust_covfix::CoberturaParser;
+use rust_covfix::{fix_coverage, CoverageReader, CoverageWriter};
 
 #[cfg(not(windows))]
 const COV_DIR: &str = "target/cov";
@@ -75,15 +75,17 @@ fn process_args() -> Arguments {
 fn show_usage() {
     println!(
         concat!(
-            "kcov-coverage-fix {}\n",
+            "{} {}\n",
             "Copyright (c): 2019 {}\n\n",
             "Usage:\n",
-            "  kcov-coverage-fix [OPTIONS]\n\n",
+            "  {} [OPTIONS]\n\n",
             "Options:\n",
             "  -h --help:    show usage\n",
             "  -v --version: output version information\n",
             "     --root:    specify project root directory"
         ),
+        env!("CARGO_PKG_NAME"),
+        env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION"),
         env!("CARGO_PKG_AUTHORS")
     );
