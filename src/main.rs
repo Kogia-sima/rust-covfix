@@ -5,42 +5,25 @@ use std::process;
 use rust_covfix::CoberturaParser;
 use rust_covfix::{fix_coverage, CoverageReader, CoverageWriter};
 
-#[cfg(not(windows))]
-const COV_DIR: &str = "target/cov";
-
-#[cfg(windows)]
-const COV_DIR: &str = "target\\cov";
-
 fn main() {
     let options = process_args();
 
-    let cov_dir = if let Some(mut root) = options.root {
-        root.push(COV_DIR);
-        if !root.exists() {
-            panic!("Run `cargo kcov` before execution.");
-        }
-        root
-    } else {
-        find_cov_dir()
-    };
-    let file = search_coverage_file(cov_dir.clone());
+    let root_dir = options.root.unwrap_or_else(|| find_root_dir());
 
-    let mut root = cov_dir;
-    root.pop();
-    root.pop();
-
-    let cf = CoberturaParser::new(root);
-    let mut coverage = cf.load_coverages(&file);
+    let cf = CoberturaParser::new(root_dir);
+    let mut coverage = cf.load_coverages(&options.target_file);
     fix_coverage(&mut coverage);
-    cf.save_coverages(&file, &coverage);
+    cf.save_coverages(&options.target_file, &coverage);
 }
 
 struct Arguments {
     root: Option<PathBuf>,
+    target_file: PathBuf,
 }
 
 fn process_args() -> Arguments {
-    let mut results = Arguments { root: None };
+    let mut root = None;
+    let mut target_file = PathBuf::new();
     let mut args = env::args();
     args.next().unwrap();
 
@@ -54,22 +37,37 @@ fn process_args() -> Arguments {
             "--root" => {
                 if let Some(arg) = args.next() {
                     if !arg.starts_with("-") {
-                        results.root = Some(PathBuf::from(arg));
+                        root = Some(PathBuf::from(arg));
                         continue;
                     }
                 }
 
-                eprintln!("--root option requires an argument.");
+                eprintln!("error: --root option requires an argument.\n");
                 show_usage();
             }
-            invalid_arg => {
-                eprintln!("invalid argument: \"{}\"\n", invalid_arg);
-                show_usage();
+            positional => {
+                if target_file.as_os_str().is_empty() {
+                    eprintln!("error: You cannot specify multiple targets.\n");
+                    show_usage();
+                }
+                target_file = PathBuf::from(positional);
             }
         }
     }
 
-    results
+    if target_file.as_os_str().is_empty() {
+        eprintln!("error: specify target file.\n");
+        show_usage();
+    }
+    if !target_file.exists() {
+        eprintln!(
+            "error: target file {} does not exist.\n",
+            target_file.display()
+        );
+        show_usage();
+    }
+
+    Arguments { root, target_file }
 }
 
 fn show_usage() {
@@ -78,11 +76,11 @@ fn show_usage() {
             "{} {}\n",
             "Copyright (c): 2019 {}\n\n",
             "Usage:\n",
-            "  {} [OPTIONS]\n\n",
+            "  {} [OPTIONS] <file>\n\n",
             "Options:\n",
-            "  -h --help:    show usage\n",
-            "  -v --version: output version information\n",
-            "     --root:    specify project root directory"
+            "  -h --help        show usage\n",
+            "  -v --version     output version information\n",
+            "     --root <dir>  specify project root directory"
         ),
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_NAME"),
@@ -93,34 +91,27 @@ fn show_usage() {
     process::exit(1);
 }
 
-fn search_coverage_file(mut p: PathBuf) -> PathBuf {
-    p.push("kcov-merged");
-    p.push("cobertura.xml");
-
-    p
-}
-
-fn find_cov_dir() -> PathBuf {
+fn find_root_dir() -> PathBuf {
     let mut path = env::current_dir().expect("cannot detect the current directory.");
-    path.push(COV_DIR);
+    path.push("target");
 
     if path.is_dir() {
+        path.pop();
         return path;
     }
 
     path.pop();
-    path.pop();
 
     while path.pop() {
-        path.push(COV_DIR);
+        path.push("target");
 
         if path.is_dir() {
+            path.pop();
             return path;
         }
 
         path.pop();
-        path.pop();
     }
 
-    panic!("Run `cargo kcov` before execution.");
+    panic!("cannot find the project root directory.\nDid you run `cargo test` at first?");
 }
