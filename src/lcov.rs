@@ -77,7 +77,10 @@ impl CoverageReader for LcovParser {
 
             let raw_data = match self.parse_line(&line_buf) {
                 Some(raw_data) => raw_data,
-                None => continue,
+                None => {
+                    line_buf.clear();
+                    continue;
+                }
             };
 
             match raw_data {
@@ -174,6 +177,10 @@ impl LcovParser {
             "LH" => Some(RawData::LH(contents.next()?.parse().ok()?)),
             "BRDA" => {
                 let line = contents.next()?.parse().ok()?;
+                if line == 0 {
+                    return None;
+                }
+
                 let block = contents.next()?.parse().ok()?;
                 let branch = contents.next()?.parse().ok()?;
                 let taken = contents.next()? != "-";
