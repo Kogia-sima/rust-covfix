@@ -45,7 +45,12 @@ impl Fixer {
         let mut state = self.state.lock().unwrap();
 
         for file_cov in data.file_coverages_mut() {
-            let content = fs::read_to_string(file_cov.path()).unwrap();
+            let path = file_cov.path();
+            if !path.is_file() {
+                panic!("Source file not found: {:?}", path);
+            }
+
+            let content = fs::read_to_string(path).unwrap();
             let source = SourceCode::new(content);
 
             for cov in file_cov.line_coverages_mut() {
