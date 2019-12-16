@@ -210,6 +210,10 @@ impl TotalCoverage for PackageCoverage {
     }
 }
 
+pub trait SupportedFile {
+    fn is_supported(&self, path: &Path) -> bool;
+}
+
 pub trait CoverageReader {
     fn read<R: BufRead>(&self, reader: &mut R) -> PackageCoverage;
 
