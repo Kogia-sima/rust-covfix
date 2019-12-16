@@ -75,6 +75,7 @@ pub struct BranchCoverage {
     pub taken: bool,
 }
 
+#[derive(Debug)]
 pub struct FileCoverage {
     path: PathBuf,
     line_coverages: Vec<LineCoverage>,
@@ -125,6 +126,7 @@ impl FileCoverage {
     }
 }
 
+#[derive(Debug)]
 pub struct PackageCoverage {
     name: String,
     file_coverages: Vec<FileCoverage>,
