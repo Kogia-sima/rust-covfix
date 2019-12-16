@@ -70,7 +70,11 @@ impl CoverageReader for LcovParser {
         let mut filename = PathBuf::new();
         let mut testname = String::new();
 
-        while let Ok(_) = reader.read_line(&mut line_buf) {
+        while let Ok(n) = reader.read_line(&mut line_buf) {
+            if n == 0 {
+                break;
+            }
+
             let raw_data = match self.parse_line(&line_buf) {
                 Some(raw_data) => raw_data,
                 None => continue,
@@ -79,28 +83,30 @@ impl CoverageReader for LcovParser {
             match raw_data {
                 RawData::TN(name) => testname = name.into(),
                 RawData::SF(file) => {
-                    if !self.check_path(file) {
-                        panic!("source file not found.: \"{}\"", file.display());
-                    }
                     filename = file.into();
                 }
                 RawData::DA(line, count) => {
                     line_coverages.push(LineCoverage {
-                        line_number: line,
+                        line_number: line.saturating_sub(1),
                         count,
                     });
                 }
                 RawData::BRDA(line, block, branch, taken) => {
                     branch_coverages.push(BranchCoverage {
-                        line_number: line,
+                        line_number: line.saturating_sub(1),
                         block_number: Some(block),
                         branch_number: Some(branch),
                         taken,
                     });
                 }
                 RawData::EndOfRecord => {
+                    let filepath = self.root.join(&filename);
+                    if !filepath.is_file() {
+                        panic!("Source file not found: {:?}", filepath);
+                    }
+
                     let file_coverage = FileCoverage::new(
-                        filename.clone(),
+                        filepath,
                         line_coverages.drain(..).collect(),
                         branch_coverages.drain(..).collect(),
                     );
@@ -111,6 +117,8 @@ impl CoverageReader for LcovParser {
                 }
                 _ => {}
             }
+
+            line_buf.clear();
         }
 
         PackageCoverage::new(testname, file_coverages)
@@ -129,6 +137,7 @@ impl LcovParser {
     }
 
     fn parse_line<'a>(&self, line: &'a str) -> Option<RawData<'a>> {
+        let line = line.trim_end();
         if line == "end_of_record" {
             return Some(RawData::EndOfRecord);
         }
@@ -176,11 +185,6 @@ impl LcovParser {
         };
     }
 
-    fn check_path(&self, path: &Path) -> bool {
-        let filepath = self.root.join(path);
-        filepath.is_file()
-    }
-
     fn write_package_coverage<W: Write>(&self, writer: &mut W, data: &PackageCoverage) {
         writeln!(writer, "TN:{}", data.name()).unwrap();
 
@@ -213,7 +217,7 @@ impl LcovParser {
         writeln!(
             writer,
             "BRDA:{},{},{},{}\n",
-            data.line_number,
+            data.line_number + 1,
             data.block_number.unwrap_or(1),
             data.branch_number.unwrap_or(1),
             if data.taken { "1" } else { "-" }
@@ -222,6 +226,6 @@ impl LcovParser {
     }
 
     fn write_line_coverage<W: Write>(&self, writer: &mut W, data: &LineCoverage) {
-        writeln!(writer, "DA:{},{}", data.line_number, data.count).unwrap();
+        writeln!(writer, "DA:{},{}", data.line_number + 1, data.count).unwrap();
     }
 }
