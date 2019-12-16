@@ -1,94 +1,79 @@
+use argparse::{ArgumentParser, Store, StoreOption};
 use std::env;
+use std::io::BufWriter;
 use std::path::PathBuf;
-use std::process;
 
-use rust_covfix::CoberturaParser;
-use rust_covfix::{fix_coverage, CoverageReader, CoverageWriter};
+use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
 
 fn main() {
-    let options = process_args();
-
+    let options = Arguments::parse();
     let root_dir = options.root.unwrap_or_else(|| find_root_dir());
 
-    let cf = CoberturaParser::new(root_dir);
-    let mut coverage = cf.load_coverages(&options.target_file);
-    fix_coverage(&mut coverage);
-    cf.save_coverages(&options.target_file, &coverage);
+    let parser = LcovParser::new(root_dir);
+    let fixer = Fixer::new();
+
+    let mut coverage = parser.read_from_file(options.input_file);
+    println!("{:#?}", coverage);
+    fixer.fix(&mut coverage);
+
+    if let Some(file) = options.output_file {
+        parser.write_to_file(&coverage, file);
+    } else {
+        let stdout = std::io::stdout();
+        let mut writer = BufWriter::new(stdout.lock());
+        parser.write(&coverage, &mut writer);
+    }
 }
 
+#[derive(Debug)]
 struct Arguments {
+    input_file: PathBuf,
+    output_file: Option<PathBuf>,
     root: Option<PathBuf>,
-    target_file: PathBuf,
 }
 
-fn process_args() -> Arguments {
-    let mut root = None;
-    let mut target_file = PathBuf::new();
-    let mut args = env::args();
-    args.next().unwrap();
+impl Arguments {
+    fn parse() -> Arguments {
+        let mut args = Arguments {
+            root: None,
+            input_file: PathBuf::new(),
+            output_file: None,
+        };
 
-    while let Some(arg) = args.next() {
-        match &*arg {
-            "-h" | "--help" => show_usage(),
-            "-v" | "--version" => {
-                println!("v{}", env!("CARGO_PKG_VERSION"));
-                process::exit(0);
-            }
-            "--root" => {
-                if let Some(arg) = args.next() {
-                    if !arg.starts_with("-") {
-                        root = Some(PathBuf::from(arg));
-                        continue;
-                    }
-                }
+        let mut ap = ArgumentParser::new();
+        ap.set_description("Rust coverage fixer");
+        ap.refer(&mut args.input_file)
+            .required()
+            .add_argument("file", Store, "input file");
+        ap.refer(&mut args.output_file).metavar("FILE").add_option(
+            &["-o", "--output"],
+            StoreOption,
+            "output file name",
+        );
+        ap.refer(&mut args.root).metavar("DIR").add_option(
+            &["--root"],
+            StoreOption,
+            "project root directory",
+        );
 
-                eprintln!("error: --root option requires an argument.\n");
-                show_usage();
-            }
-            positional => {
-                if target_file.as_os_str().is_empty() {
-                    eprintln!("error: You cannot specify multiple targets.\n");
-                    show_usage();
-                }
-                target_file = PathBuf::from(positional);
+        ap.parse_args_or_exit();
+        drop(ap);
+
+        args.validate();
+        args
+    }
+
+    fn validate(&mut self) {
+        if let Some(ref root) = self.root {
+            if !root.is_dir() {
+                panic!("Directory not found: \"{}\"", root.display());
             }
         }
+
+        if !self.input_file.is_file() {
+            panic!("Input file not found: \"{}\"", self.input_file.display());
+        }
     }
-
-    if target_file.as_os_str().is_empty() {
-        eprintln!("error: specify target file.\n");
-        show_usage();
-    }
-    if !target_file.exists() {
-        eprintln!(
-            "error: target file {} does not exist.\n",
-            target_file.display()
-        );
-        show_usage();
-    }
-
-    Arguments { root, target_file }
-}
-
-fn show_usage() {
-    println!(
-        concat!(
-            "{} {}\n",
-            "Copyright (c): 2019 {}\n\n",
-            "Usage:\n",
-            "  {} [OPTIONS] <file>\n\n",
-            "Options:\n",
-            "  -h --help        show usage\n",
-            "  -v --version     output version information\n",
-            "     --root <dir>  specify project root directory"
-        ),
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_VERSION"),
-        env!("CARGO_PKG_AUTHORS")
-    );
-
-    process::exit(1);
 }
 
 fn find_root_dir() -> PathBuf {
