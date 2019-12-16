@@ -222,14 +222,13 @@ pub trait CoverageReader {
 }
 
 pub trait CoverageWriter {
-    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W, old_contents: &str);
+    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W);
 
     fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) {
-        let old_contents = fs::read_to_string(path.as_ref()).unwrap();
         let f = fs::File::create(path.as_ref()).unwrap();
         let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
         let mut writer = BufWriter::with_capacity(capacity, f);
-        self.write(&data, &mut writer, &old_contents);
+        self.write(&data, &mut writer);
     }
 }
 

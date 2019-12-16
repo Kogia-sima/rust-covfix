@@ -109,7 +109,7 @@ impl CoverageReader for LcovParser {
 }
 
 impl CoverageWriter for LcovParser {
-    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W, _: &str) {
+    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) {
         self.write_package_coverage(writer, data);
     }
 }
