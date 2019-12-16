@@ -201,7 +201,8 @@ impl LcovParser {
     }
 
     fn write_file_coverage<W: Write>(&self, writer: &mut W, data: &FileCoverage) {
-        writeln!(writer, "SF:{}", data.path().display()).unwrap();
+        let path = data.path().strip_prefix(&self.root).unwrap();
+        writeln!(writer, "SF:{}", path.display()).unwrap();
 
         for cov in data.branch_coverages() {
             self.write_branch_coverage(writer, cov);
@@ -223,7 +224,7 @@ impl LcovParser {
     fn write_branch_coverage<W: Write>(&self, writer: &mut W, data: &BranchCoverage) {
         writeln!(
             writer,
-            "BRDA:{},{},{},{}\n",
+            "BRDA:{},{},{},{}",
             data.line_number + 1,
             data.block_number.unwrap_or(1),
             data.branch_number.unwrap_or(1),
