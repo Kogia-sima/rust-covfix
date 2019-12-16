@@ -23,10 +23,10 @@ path = "src/lib.rs"
 doctest = false
 
 [features]
-default = ["cli", "inline", "lcov"]
+default = ["cli", "lcov"]
 cli = ["argparse"]
 cobertura = ["quick-xml"]
-inline = []
+coverage = []
 lcov = []
 
 [dependencies]
