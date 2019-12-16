@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::fs;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::slice;
 
@@ -14,6 +15,17 @@ impl SourceCode {
         let buffer = buffer.into();
         let lines: Vec<_> = buffer.lines().map(|v| v as *const str).collect();
         SourceCode { buffer, lines }
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn from_file(path: &Path) -> Self {
+        let buffer = std::fs::read_to_string(path).unwrap();
+        Self::new(buffer)
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn get_line(&self, index: usize) -> Option<&str> {
+        unsafe { self.lines.get(index).map(|&v| &*v) }
     }
 
     #[cfg_attr(feature = "inline", inline)]
@@ -49,69 +61,181 @@ impl<'a> Iterator for Lines<'a> {
 unsafe impl Send for Lines<'_> {}
 unsafe impl Sync for Lines<'_> {}
 
-pub trait TotalCoverage {
-    fn line_rate(&self) -> f32 {
-        1.0
-    }
-    fn branch_rate(&self) -> f32 {
-        1.0
-    }
+#[derive(Clone, Debug)]
+pub struct LineCoverage {
+    pub line_number: usize,
+    pub count: u32,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum LineCoverage {
-    NotCovered = 0,
-    Covered = 1,
-    NotExecutable = 2,
+#[derive(Clone, Debug)]
+pub struct BranchCoverage {
+    pub line_number: usize,
+    pub block_number: Option<usize>,
+    pub branch_number: Option<usize>,
+    pub taken: bool,
 }
 
-impl TotalCoverage for LineCoverage {
+pub struct FileCoverage {
+    path: PathBuf,
+    line_coverages: Vec<LineCoverage>,
+    branch_coverages: Vec<BranchCoverage>,
+}
+
+impl FileCoverage {
     #[cfg_attr(feature = "inline", inline)]
-    fn line_rate(&self) -> f32 {
-        if *self == Self::Covered {
-            1.0
-        } else {
-            0.0
+    pub fn new<P: Into<PathBuf>>(
+        path: P,
+        line_coverages: Vec<LineCoverage>,
+        branch_coverages: Vec<BranchCoverage>,
+    ) -> Self {
+        Self {
+            path: path.into(),
+            line_coverages,
+            branch_coverages,
         }
     }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn line_coverages(&self) -> &[LineCoverage] {
+        &self.line_coverages
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn line_coverages_mut(&mut self) -> &mut [LineCoverage] {
+        &mut self.line_coverages
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn branch_coverages(&self) -> &[BranchCoverage] {
+        &self.branch_coverages
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    pub fn branch_coverages_mut(&mut self) -> &mut [BranchCoverage] {
+        &mut self.branch_coverages
+    }
+
+    pub(crate) fn remove_invalid_coverages(&mut self) {
+        self.line_coverages.retain(|v| v.count != std::u32::MAX);
+    }
+}
+
+pub struct PackageCoverage {
+    name: String,
+    file_coverages: Vec<FileCoverage>,
+}
+
+impl PackageCoverage {
+    pub fn new<T: Into<String>>(name: T, file_coverages: Vec<FileCoverage>) -> Self {
+        Self {
+            name: name.into(),
+            file_coverages,
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn file_coverages(&self) -> &[FileCoverage] {
+        &self.file_coverages
+    }
+
+    pub fn file_coverages_mut(&mut self) -> &mut [FileCoverage] {
+        &mut self.file_coverages
+    }
+}
+
+pub trait TotalCoverage {
+    fn line_executed(&self) -> usize;
+    fn line_total(&self) -> usize;
+    fn branch_executed(&self) -> usize;
+    fn branch_total(&self) -> usize;
 }
 
 impl TotalCoverage for FileCoverage {
-    fn line_rate(&self) -> f32 {
-        let mut hits = 0u32;
-        let mut total = 0u32;
+    #[cfg_attr(feature = "inline", inline)]
+    fn line_executed(&self) -> usize {
+        self.line_coverages.iter().filter(|&v| v.count > 0).count()
+    }
 
-        for cov in self {
-            match cov {
-                LineCoverage::Covered => {
-                    total += 1;
-                    hits += 1;
-                }
-                LineCoverage::NotCovered => {
-                    total += 1;
-                }
-                LineCoverage::NotExecutable => {}
-            };
-        }
+    #[cfg_attr(feature = "inline", inline)]
+    fn line_total(&self) -> usize {
+        self.line_coverages.len()
+    }
 
-        (hits as f32) / (total as f32)
+    #[cfg_attr(feature = "inline", inline)]
+    fn branch_executed(&self) -> usize {
+        self.branch_coverages.iter().filter(|&v| v.taken).count()
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    fn branch_total(&self) -> usize {
+        self.branch_coverages.len()
+    }
+}
+
+impl TotalCoverage for PackageCoverage {
+    #[cfg_attr(feature = "inline", inline)]
+    fn line_executed(&self) -> usize {
+        self.file_coverages
+            .iter()
+            .fold(0, |sum, a| sum + a.line_executed())
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    fn line_total(&self) -> usize {
+        self.file_coverages
+            .iter()
+            .fold(0, |sum, a| sum + a.line_total())
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    fn branch_executed(&self) -> usize {
+        self.file_coverages
+            .iter()
+            .fold(0, |sum, a| sum + a.branch_executed())
+    }
+
+    #[cfg_attr(feature = "inline", inline)]
+    fn branch_total(&self) -> usize {
+        self.file_coverages
+            .iter()
+            .fold(0, |sum, a| sum + a.branch_total())
     }
 }
 
 pub trait CoverageReader {
-    fn load_coverages(&self, path: &Path) -> PackageCoverage;
+    fn read<R: BufRead>(&self, reader: &mut R) -> PackageCoverage;
+
+    fn read_from_file<P: AsRef<Path>>(&self, path: P) -> PackageCoverage {
+        let f = fs::File::open(path).unwrap();
+        let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
+        let mut reader = BufReader::with_capacity(capacity, f);
+        self.read(&mut reader)
+    }
 }
 
 pub trait CoverageWriter {
-    fn save_coverages(&self, path: &Path, data: &PackageCoverage);
-}
+    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W, old_contents: &str);
 
-pub type FileCoverage = Vec<LineCoverage>;
-pub type PackageCoverage = HashMap<PathBuf, FileCoverage>;
+    fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) {
+        let old_contents = fs::read_to_string(path.as_ref()).unwrap();
+        let f = fs::File::create(path.as_ref()).unwrap();
+        let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
+        let mut writer = BufWriter::with_capacity(capacity, f);
+        self.write(&data, &mut writer, &old_contents);
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use super::{LineCoverage, SourceCode, TotalCoverage};
+    use super::SourceCode;
 
     #[test]
     fn source_code_tests() {
@@ -120,31 +244,5 @@ mod tests {
         assert_eq!(it.next(), Some("apple"));
         assert_eq!(it.next(), Some("banana"));
         assert_eq!(it.next(), None);
-    }
-
-    #[test]
-    fn total_coverage() {
-        assert_eq!(LineCoverage::NotExecutable.line_rate(), 0.0);
-        assert_eq!(LineCoverage::NotExecutable.branch_rate(), 1.0);
-        assert_eq!(LineCoverage::NotCovered.line_rate(), 0.0);
-        assert_eq!(LineCoverage::Covered.line_rate(), 1.0);
-        assert_eq!(
-            vec![
-                LineCoverage::NotCovered,
-                LineCoverage::NotCovered,
-                LineCoverage::NotCovered
-            ]
-            .line_rate(),
-            0.0
-        );
-        assert_eq!(
-            vec![
-                LineCoverage::NotCovered,
-                LineCoverage::Covered,
-                LineCoverage::NotCovered
-            ]
-            .line_rate(),
-            1.0 / 3.0
-        );
     }
 }
