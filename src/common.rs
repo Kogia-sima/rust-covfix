@@ -78,8 +78,10 @@ pub struct BranchCoverage {
 #[derive(Debug)]
 pub struct FileCoverage {
     path: PathBuf,
-    line_coverages: Vec<LineCoverage>,
-    branch_coverages: Vec<BranchCoverage>,
+    #[doc(hidden)]
+    pub line_coverages: Vec<LineCoverage>,
+    #[doc(hidden)]
+    pub branch_coverages: Vec<BranchCoverage>,
 }
 
 impl FileCoverage {
@@ -107,25 +109,16 @@ impl FileCoverage {
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn line_coverages_mut(&mut self) -> &mut [LineCoverage] {
-        &mut self.line_coverages
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
     pub fn branch_coverages(&self) -> &[BranchCoverage] {
         &self.branch_coverages
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn branch_coverages_mut(&mut self) -> &mut [BranchCoverage] {
-        &mut self.branch_coverages
     }
 }
 
 #[derive(Debug)]
 pub struct PackageCoverage {
     name: String,
-    file_coverages: Vec<FileCoverage>,
+    #[doc(hidden)]
+    pub file_coverages: Vec<FileCoverage>,
 }
 
 impl PackageCoverage {
@@ -143,10 +136,6 @@ impl PackageCoverage {
     pub fn file_coverages(&self) -> &[FileCoverage] {
         &self.file_coverages
     }
-
-    pub fn file_coverages_mut(&mut self) -> &mut [FileCoverage] {
-        &mut self.file_coverages
-    }
 }
 
 pub trait TotalCoverage {
@@ -159,12 +148,18 @@ pub trait TotalCoverage {
 impl TotalCoverage for FileCoverage {
     #[cfg_attr(not(feature = "coverage"), inline)]
     fn line_executed(&self) -> usize {
-        self.line_coverages.iter().filter(|&v| v.count.map_or(false, |v| v > 0)).count()
+        self.line_coverages
+            .iter()
+            .filter(|&v| v.count.map_or(false, |v| v > 0))
+            .count()
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
     fn line_total(&self) -> usize {
-        self.line_coverages.iter().filter(|&v| v.count.is_some()).count()
+        self.line_coverages
+            .iter()
+            .filter(|&v| v.count.is_some())
+            .count()
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
