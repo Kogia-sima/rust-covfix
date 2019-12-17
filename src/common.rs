@@ -64,7 +64,7 @@ unsafe impl Sync for Lines<'_> {}
 #[derive(Clone, Debug)]
 pub struct LineCoverage {
     pub line_number: usize,
-    pub count: u32,
+    pub count: Option<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -120,10 +120,6 @@ impl FileCoverage {
     pub fn branch_coverages_mut(&mut self) -> &mut [BranchCoverage] {
         &mut self.branch_coverages
     }
-
-    pub(crate) fn remove_invalid_coverages(&mut self) {
-        self.line_coverages.retain(|v| v.count != std::u32::MAX);
-    }
 }
 
 #[derive(Debug)]
@@ -163,12 +159,12 @@ pub trait TotalCoverage {
 impl TotalCoverage for FileCoverage {
     #[cfg_attr(not(feature = "coverage"), inline)]
     fn line_executed(&self) -> usize {
-        self.line_coverages.iter().filter(|&v| v.count > 0).count()
+        self.line_coverages.iter().filter(|&v| v.count.map_or(false, |v| v > 0)).count()
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
     fn line_total(&self) -> usize {
-        self.line_coverages.len()
+        self.line_coverages.iter().filter(|&v| v.count.is_some()).count()
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]

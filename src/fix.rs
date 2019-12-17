@@ -66,7 +66,6 @@ impl Fixer {
             }
 
             state.reset();
-            file_cov.remove_invalid_coverages();
         }
     }
 
@@ -81,7 +80,7 @@ impl Fixer {
         }
 
         if self.ne_reg.iter().any(|r| r.is_match(line)) {
-            cov.count = std::u32::MAX;
+            cov.count = None;
         }
 
         if cov.count == 0 && self.c_reg.iter().any(|r| r.is_match(line)) {
