@@ -7,7 +7,7 @@ use crate::common::{
 };
 
 /// Enumeration representing each line in 'lcov.info'
-pub enum RawData<'a> {
+enum RawData<'a> {
     /// Test Name
     TN(&'a str),
 
