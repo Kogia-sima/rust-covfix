@@ -212,7 +212,7 @@ pub trait CoverageReader {
 
     fn read_from_file<P: AsRef<Path>>(&self, path: P) -> PackageCoverage {
         let f = fs::File::open(path).unwrap();
-        let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
+        let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(8192);
         let mut reader = BufReader::with_capacity(capacity, f);
         self.read(&mut reader)
     }
@@ -223,8 +223,7 @@ pub trait CoverageWriter {
 
     fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) {
         let f = fs::File::create(path.as_ref()).unwrap();
-        let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(0);
-        let mut writer = BufWriter::with_capacity(capacity, f);
+        let mut writer = BufWriter::new(f);
         self.write(&data, &mut writer);
     }
 }
