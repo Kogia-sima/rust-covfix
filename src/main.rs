@@ -1,4 +1,4 @@
-use argparse::{ArgumentParser, Store, StoreOption};
+use argparse::{ArgumentParser, Print, Store, StoreOption};
 use std::env;
 use std::io::BufWriter;
 use std::path::PathBuf;
@@ -13,7 +13,6 @@ fn main() {
     let fixer = Fixer::new();
 
     let mut coverage = parser.read_from_file(options.input_file);
-    println!("{:#?}", coverage);
     fixer.fix(&mut coverage);
 
     if let Some(file) = options.output_file {
@@ -25,7 +24,6 @@ fn main() {
     }
 }
 
-#[derive(Debug)]
 struct Arguments {
     input_file: PathBuf,
     output_file: Option<PathBuf>,
@@ -44,11 +42,16 @@ impl Arguments {
         ap.set_description("Rust coverage fixer");
         ap.refer(&mut args.input_file)
             .required()
-            .add_argument("file", Store, "input file");
+            .add_argument("file", Store, "coverage file");
+        ap.add_option(
+            &["-v", "--version"],
+            Print(env!("CARGO_PKG_VERSION").to_owned()),
+            "display version",
+        );
         ap.refer(&mut args.output_file).metavar("FILE").add_option(
             &["-o", "--output"],
             StoreOption,
-            "output file name",
+            "output file name (default: stdout)",
         );
         ap.refer(&mut args.root).metavar("DIR").add_option(
             &["--root"],
