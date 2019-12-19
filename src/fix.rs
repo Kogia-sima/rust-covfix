@@ -1,7 +1,5 @@
 use regex::Regex;
-use std::cell::UnsafeCell;
 use std::fs;
-use std::sync::Mutex;
 
 use crate::common::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage, SourceCode};
 
@@ -13,18 +11,12 @@ impl State {
     fn new() -> Self {
         State { is_test: false }
     }
-
-    fn reset(&mut self) {
-        *self = Self::new();
-    }
 }
 
 pub struct Fixer {
     ne_reg: Vec<Regex>,
     p_reg: Vec<Regex>,
     ts_reg: Vec<Regex>,
-    state: UnsafeCell<State>,
-    mutex: Mutex<()>,
 }
 
 impl Fixer {
@@ -43,15 +35,11 @@ impl Fixer {
                 Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$").unwrap(),
             ],
             ts_reg: vec![Regex::new(r"^\s*mod\s*test\s*\{\s*(?://.*)?$").unwrap()],
-            state: UnsafeCell::new(State::new()),
-            mutex: Mutex::new(()),
         }
     }
 
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) {
-        let _ = self.mutex.lock().unwrap();
-
         for mut file_cov in &mut data.file_coverages {
             let path = file_cov.path();
             if !path.is_file() {
@@ -61,67 +49,66 @@ impl Fixer {
             let content = fs::read_to_string(path).unwrap();
             let source = SourceCode::new(content);
 
-            unsafe {
-                self.process_file(&source, &mut file_cov);
-                (*self.state.get()).reset();
-            }
+            self.process_file(&source, &mut file_cov);
         }
     }
 
     // thread unsafe method
-    unsafe fn process_file(&self, source: &SourceCode, cov: &mut FileCoverage) {
+    fn process_file(&self, source: &SourceCode, cov: &mut FileCoverage) {
         cov.line_coverages.sort_unstable_by_key(|v| v.line_number);
         cov.branch_coverages.sort_unstable_by_key(|v| v.line_number);
 
-        let mut lp = cov.line_coverages.as_mut_ptr();
-        let lp_end = lp.add(cov.line_coverages.len());
+        let mut state = State::new();
 
-        let mut bp = cov.branch_coverages.as_mut_ptr();
-        let bp_end = bp.add(cov.branch_coverages.len());
+        unsafe {
+            let mut lp = cov.line_coverages.as_mut_ptr();
+            let lp_end = lp.add(cov.line_coverages.len());
 
-        // skip branch coverages which does not contains line information
-        while bp < bp_end && (*bp).line_number.is_none() {
-            bp = bp.add(1);
-        }
+            let mut bp = cov.branch_coverages.as_mut_ptr();
+            let bp_end = bp.add(cov.branch_coverages.len());
 
-        for (line, line_str) in source.lines().enumerate() {
-            // line coverage at current line
-            let line_cov = if lp < lp_end && (*lp).line_number == line {
-                let val = Some(&mut *lp);
-                lp = lp.add(1);
-                val
-            } else {
-                None
-            };
-
-            // branch coverages at current line
-            let branch_covs = if bp < bp_end && (*bp).line_number.unwrap() == line {
-                let start = bp;
+            // skip branch coverages which does not contains line information
+            while bp < bp_end && (*bp).line_number.is_none() {
                 bp = bp.add(1);
-                let mut count = 1;
-                while bp < bp_end && (*bp).line_number.unwrap() == line {
-                    bp = bp.add(1);
-                    count += 1;
-                }
-                Some(std::slice::from_raw_parts_mut(start, count))
-            } else {
-                None
-            };
+            }
 
-            // fix coverage
-            self.process_line(line_str, line_cov, branch_covs);
+            for (line, line_str) in source.lines().enumerate() {
+                // line coverage at current line
+                let line_cov = if lp < lp_end && (*lp).line_number == line {
+                    let val = Some(&mut *lp);
+                    lp = lp.add(1);
+                    val
+                } else {
+                    None
+                };
+
+                // branch coverages at current line
+                let branch_covs = if bp < bp_end && (*bp).line_number.unwrap() == line {
+                    let start = bp;
+                    bp = bp.add(1);
+                    let mut count = 1;
+                    while bp < bp_end && (*bp).line_number.unwrap() == line {
+                        bp = bp.add(1);
+                        count += 1;
+                    }
+                    Some(std::slice::from_raw_parts_mut(start, count))
+                } else {
+                    None
+                };
+
+                // fix coverage
+                self.process_line(line_str, line_cov, branch_covs, &mut state);
+            }
         }
     }
 
-    /// thread unsafe method
-    unsafe fn process_line(
+    fn process_line(
         &self,
         line: &str,
         mut line_cov: Option<&mut LineCoverage>,
         mut branch_covs: Option<&mut [BranchCoverage]>,
+        state: &mut State,
     ) {
-        let state = &mut *self.state.get();
-
         if state.is_test {
             return;
         }
@@ -161,6 +148,3 @@ impl Default for Fixer {
         Self::new()
     }
 }
-
-unsafe impl Send for Fixer {}
-unsafe impl Sync for Fixer {}
