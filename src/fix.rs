@@ -84,31 +84,7 @@ impl Fixer {
             bp = bp.add(1);
         }
 
-        loop {
-            // get next line number
-            let line = match (lp < lp_end, bp < bp_end) {
-                (true, true) => std::cmp::min((*lp).line_number, (*bp).line_number.unwrap()),
-                (true, false) => (*lp).line_number,
-                (false, true) => (*bp).line_number.unwrap(),
-                (false, false) => break,
-            };
-
-            // get line from source code
-            let line_str = match source.get_line(line) {
-                Some(n) => n,
-                None => {
-                    // go to next line
-                    if lp < lp_end && (*lp).line_number == line {
-                        lp = lp.add(1);
-                    }
-                    while bp < bp_end && (*bp).line_number.unwrap() == line {
-                        bp = bp.add(1);
-                    }
-
-                    continue;
-                }
-            };
-
+        for (line, line_str) in source.lines().enumerate() {
             // line coverage at current line
             let line_cov = if lp < lp_end && (*lp).line_number == line {
                 let val = Some(&mut *lp);
@@ -152,6 +128,10 @@ impl Fixer {
 
         if self.ts_reg.iter().any(|r| r.is_match(line)) {
             state.is_test = true;
+            return;
+        }
+
+        if line_cov.is_none() && branch_covs.is_none() {
             return;
         }
 
