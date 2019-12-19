@@ -105,8 +105,8 @@ impl Fixer {
     fn process_line(
         &self,
         line: &str,
-        mut line_cov: Option<&mut LineCoverage>,
-        mut branch_covs: Option<&mut [BranchCoverage]>,
+        line_cov: Option<&mut LineCoverage>,
+        branch_covs: Option<&mut [BranchCoverage]>,
         state: &mut State,
     ) {
         if state.is_test {
@@ -123,15 +123,15 @@ impl Fixer {
         }
 
         if self.ne_reg.iter().any(|r| r.is_match(line)) {
-            if let Some(ref mut line_cov) = line_cov {
+            if let Some(&mut ref mut line_cov) = line_cov {
                 line_cov.count = None
             };
-            if let Some(ref mut branch_covs) = branch_covs {
+            if let Some(&mut ref mut branch_covs) = branch_covs {
                 branch_covs.iter_mut().for_each(|v| v.taken = false);
             }
         }
 
-        if let Some(ref mut branch_covs) = branch_covs {
+        if let Some(&mut ref mut branch_covs) = branch_covs {
             let should_be_fixed = match line_cov {
                 Some(&mut LineCoverage { count: None, .. }) => false,
                 _ => true,
