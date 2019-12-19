@@ -153,7 +153,7 @@ impl LcovParser {
         let prefix = &line[0..end];
         let mut contents = line[end + 1..].split(',');
 
-        return match prefix {
+        match prefix {
             "TN" => Some(RawData::TN(contents.next().unwrap_or(""))),
             "SF" => Some(RawData::SF(Path::new(contents.next()?))),
             "FN" => {
@@ -189,7 +189,7 @@ impl LcovParser {
             "BRF" => Some(RawData::BRF(contents.next()?.parse().ok()?)),
             "BRH" => Some(RawData::BRH(contents.next()?.parse().ok()?)),
             _ => None,
-        };
+        }
     }
 
     fn write_package_coverage<W: Write>(&self, writer: &mut W, data: &PackageCoverage) {

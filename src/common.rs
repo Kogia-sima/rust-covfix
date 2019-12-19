@@ -29,9 +29,9 @@ impl SourceCode {
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn lines<'a>(&'a self) -> Lines<'a> {
+    pub fn lines(&self) -> Lines<'_> {
         Lines {
-            inner: (&self.lines).into_iter(),
+            inner: self.lines.iter(),
         }
     }
 

@@ -7,7 +7,7 @@ use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
 
 fn main() {
     let options = Arguments::parse();
-    let root_dir = options.root.unwrap_or_else(|| find_root_dir());
+    let root_dir = options.root.unwrap_or_else(find_root_dir);
 
     let parser = LcovParser::new(root_dir);
     let fixer = Fixer::new();
