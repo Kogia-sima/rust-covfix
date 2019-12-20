@@ -22,14 +22,7 @@ test_script:
   - cargo test
 
 before_deploy:
-  - set TARGET=%PLATFORM_TARGET%-pc-windows-msvc
-  - set PACKAGE_NAME=rust-covfix-win-%PLATFORM_TARGET%
-  - cargo build --release --locked --target %TARGET%
-  - mkdir %PACKAGE_NAME%
-  - copy .\target\%TARGET%\release\rust-covfix.exe %PACKAGE_NAME%
-  - copy .\README.md %PACKAGE_NAME%
-  - copy .\LICENSE %PACKAGE_NAME%
-  - 7z a %PACKAGE_NAME%.zip %PACKAGE_NAME%
+  - ps: .ci\before_deploy.ps1
 
 artifacts:
   - path: rust-covfix-win-$(PLATFORM_TARGET).zip
