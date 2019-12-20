@@ -3,7 +3,7 @@
 set -ex
 
 binary_name="$PROJECT_NAME"
-package_name="$PROJECT_NAME-$TRAVIS_TAG-$TARGET"
+package_name="$PROJECT_NAME-$TRAVIS_OS_NAME-x86_64"
 
 cargo build --target "$TARGET" --release --verbose
 mkdir -p "$package_name"
