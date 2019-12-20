@@ -31,9 +31,12 @@ before_deploy:
   - copy .\LICENSE %PACKAGE_NAME%
   - 7z a %PACKAGE_NAME%.zip %PACKAGE_NAME%
 
+artifacts:
+  - path: rust-covfix-win-$(PLATFORM_TARGET).zip
+
 deploy:
   provider: GitHub
-  artifact: /.*\.zip/
+  artifact: rust-covfix-win-$(PLATFORM_TARGET).zip
   description: 'Automatically deployed release artifacts'
   auth_token:
     secure: 85INcXiqUByZKzxbMTo7EqxBSCSpCQIrIG4FCg3np8eR3l6rgRm92OF8LJBrLKX1
