@@ -64,7 +64,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rust-covfix"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "argparse 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
