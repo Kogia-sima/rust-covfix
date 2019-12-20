@@ -1,7 +1,8 @@
 use error_chain::bail;
 use regex::Regex;
+use std::fs;
 
-use crate::common::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage, SourceCode};
+use crate::common::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage};
 use crate::error::*;
 
 struct State {
@@ -41,21 +42,20 @@ impl Fixer {
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
         for mut file_cov in &mut data.file_coverages {
-            let path = file_cov.path();
-            if !path.is_file() {
-                bail!(ErrorKind::SourceFileNotFound(path.to_owned()));
-            }
-
-            let source = SourceCode::from_file(path)?;
-
-            self.process_file(&source, &mut file_cov);
+            self.process_file(&mut file_cov)?;
         }
 
         Ok(())
     }
 
-    // thread unsafe method
-    fn process_file(&self, source: &SourceCode, cov: &mut FileCoverage) {
+    fn process_file(&self, cov: &mut FileCoverage) -> Result<(), Error> {
+        let path = cov.path();
+        if !path.is_file() {
+            bail!(ErrorKind::SourceFileNotFound(path.to_owned()));
+        }
+
+        let source = fs::read_to_string(path)?;
+
         cov.line_coverages.sort_unstable_by_key(|v| v.line_number);
         cov.branch_coverages.sort_unstable_by_key(|v| v.line_number);
 
@@ -101,6 +101,8 @@ impl Fixer {
                 self.process_line(line_str, line_cov, branch_covs, &mut state);
             }
         }
+
+        Ok(())
     }
 
     fn process_line(

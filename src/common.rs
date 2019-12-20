@@ -1,68 +1,8 @@
 use std::fs;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::slice;
 
 use crate::error::*;
-
-pub struct SourceCode {
-    // WARNING! Do not edit buffer after the object is initialized
-    #[allow(dead_code)]
-    buffer: String,
-    lines: Vec<*const str>,
-}
-
-impl SourceCode {
-    pub fn new<T: Into<String>>(buffer: T) -> Self {
-        let buffer = buffer.into();
-        let lines: Vec<_> = buffer.lines().map(|v| v as *const str).collect();
-        SourceCode { buffer, lines }
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn from_file(path: &Path) -> Result<Self, Error> {
-        let buffer = std::fs::read_to_string(path)
-            .chain_err(|| format!("Failed to open source file {:?}", path))?;
-        Ok(Self::new(buffer))
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn get_line(&self, index: usize) -> Option<&str> {
-        unsafe { self.lines.get(index).map(|&v| &*v) }
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn lines(&self) -> Lines<'_> {
-        Lines {
-            inner: self.lines.iter(),
-        }
-    }
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn total_lines(&self) -> usize {
-        self.lines.len()
-    }
-}
-
-unsafe impl Send for SourceCode {}
-unsafe impl Sync for SourceCode {}
-
-#[derive(Clone)]
-pub struct Lines<'a> {
-    inner: slice::Iter<'a, *const str>,
-}
-
-impl<'a> Iterator for Lines<'a> {
-    type Item = &'a str;
-
-    #[cfg_attr(not(feature = "coverage"), inline)]
-    fn next(&mut self) -> Option<Self::Item> {
-        unsafe { self.inner.next().map(|v| &**v) }
-    }
-}
-
-unsafe impl Send for Lines<'_> {}
-unsafe impl Sync for Lines<'_> {}
 
 #[derive(Clone, Debug)]
 pub struct LineCoverage {
@@ -232,19 +172,5 @@ pub trait CoverageWriter {
             .chain_err(|| format!("Failed to save coverage into file {:?}", path))?;
         let mut writer = BufWriter::new(f);
         self.write(&data, &mut writer)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::SourceCode;
-
-    #[test]
-    fn source_code_tests() {
-        let s = SourceCode::new("apple\nbanana");
-        let mut it = s.lines().clone();
-        assert_eq!(it.next(), Some("apple"));
-        assert_eq!(it.next(), Some("banana"));
-        assert_eq!(it.next(), None);
     }
 }
