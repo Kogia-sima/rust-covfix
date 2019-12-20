@@ -2,10 +2,6 @@ dist: bionic
 language: rust
 sudo: false
 
-branches:
-  except:
-    - /^v[0-9]/
-
 matrix:
   include:
     - os: linux
@@ -14,15 +10,33 @@ matrix:
 
     - os: linux
       rust: nightly
-      env: TARGET=x86_64-unknown-linux-gnu
 
     - os: osx
       rust: stable
-      env: TARGET=x86_64_apple-darwin
+      env: TARGET=x86_64-apple-darwin
+
+env:
+  global:
+    - PROJECT_NAME=rust-covfix
 
 script:
   - cargo check
   - cargo test
+
+before_deploy:
+  - bash .ci/before_deploy.sh
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  file_glob: true
+  file:
+    - dist/*
+  on:
+    tags: true
+    condition: $TRAVIS_RUST_VERSION = stable && $TARGET != ""
+  api_key:
+    secure: T8PRlj0hWBrnOY/rKMjfh85D4WiQL3/vlFuzacqMb0V+Eclh8F7Vrx0YxJo3L4no0p/IEpMIYJbFTE5HnxTEjzhXrCA1joyFrDvMc1bUG8b/Watmxqb2Sscbu0/TWAzw4vaXX7nKHsqalLIV1OrFQX3WeubUNLj4k4jZt/QOYySBY17LNkfM06HNGZyYFhGZpAwi33obUnsQeG9Po7ktnS8A+W1JvHFPoNfOYcjP3sc6LTE0jX9zCVAJaVKN8331rmhaCX/QRj9iUWly55d/TmQA0iVLkTxmI3JsV0KlPyJlb9EjDJqxa103EAxOeP7rbO7vwBSDRAHF5cpBCdAOM2yGNLd7A0G255VrWqH3FPz6fV4jOSNyqCGYtUR2hM50LoCwpLEF4Wcd193utrOdSsFekdUmKXG8T1/kloiUxKkuPiSKtvAID7li4juBh//gMZU5gvL3msjafWTWl8GeFNY1Pr+CjznkVINieiluyAwrsUHHxQ3PpKyNMlBvQEoi/SJxRda0sVYrS1njqcRTcWLBb0F8Zb3FSqVchPP2aBO0rKPb9Wm/Es4WceP8JPL0OQt4JODyK5cqceIWW+wnXAWDNo5c7Xyi3s9n5hxUAh2RZm6H0jj3KE5ojz1PBRO0Im2FiC/xcMlSFc2OXr+VrWyzP9BTh4U0Wjm/xRlcC40=
 
 notifications:
   email: false
