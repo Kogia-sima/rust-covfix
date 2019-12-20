@@ -13,8 +13,8 @@ strip "$package_name/$binary_name"
 cp README.md "$package_name"
 cp LICENSE "$package_name"
 
-tar zcvf "${package_name}.tar.gz" "$package_name"
+tar cvJf "${package_name}.tar.xz" "$package_name"
 rm -rf "$package_name"
 
 mkdir dist
-mv "${package_name}.tar.gz" dist/
+mv "${package_name}.tar.xz" dist/
