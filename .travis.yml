@@ -24,7 +24,7 @@ script:
   - cargo test
 
 before_deploy:
-  - if [[ "$TRAVIS_TAG" != "" ]] && [[ "$TARGET" != "" ]]; then bash .ci/before_deploy.sh; fi
+  - bash .ci/before_deploy.sh
 
 deploy:
   provider: releases
