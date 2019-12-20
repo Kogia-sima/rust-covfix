@@ -25,13 +25,11 @@ doctest = false
 [features]
 default = ["cli", "backtrace", "lcov"]
 cli = ["argparse"]
-cobertura = ["quick-xml"]
 noinline = []
 lcov = []
 backtrace = ["error-chain/backtrace"]
 
 [dependencies]
-quick-xml = { version = "0.17.0", optional = true }
 argparse = { version = "0.2.2", optional = true }
 error-chain = { version = "0.12.1", default-features = false }
 
