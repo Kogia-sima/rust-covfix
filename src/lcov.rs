@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use crate::coverage::{
     BranchCoverage, CoverageReader, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
-    SupportedFile, TotalCoverage,
+    TotalCoverage,
 };
 use crate::error::*;
 
@@ -52,15 +52,6 @@ enum RawData<'a> {
 
 pub struct LcovParser {
     root: PathBuf,
-}
-
-impl SupportedFile for LcovParser {
-    fn is_supported(&self, path: &Path) -> bool {
-        match path.file_name() {
-            Some(filename) => filename == "lcov.info",
-            None => false,
-        }
-    }
 }
 
 impl CoverageReader for LcovParser {
