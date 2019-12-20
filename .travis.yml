@@ -1,8 +1,12 @@
 dist: bionic
 language: rust
-sudo: false
+
+branches:
+  except:
+    - stable
 
 matrix:
+  fast_finish: true
   include:
     - os: linux
       rust: stable
@@ -28,7 +32,7 @@ before_deploy:
 
 deploy:
   provider: releases
-  skip_cleanup: true
+  cleanup: false
   file_glob: true
   file:
     - dist/*
