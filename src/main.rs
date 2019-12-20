@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process;
 
 use rust_covfix::error::*;
-use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
+use rust_covfix::{lcov::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
 
 fn main() {
     if let Err(e) = run() {
@@ -23,7 +23,7 @@ fn run() -> Result<(), Error> {
         .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
 
     let parser = LcovParser::new(root_dir);
-    let fixer = Fixer::new().chain_err(|| "Failed to initialize fixer")?;
+    let fixer = CoverageFixer::new().chain_err(|| "Failed to initialize fixer")?;
 
     let mut coverage = parser.read_from_file(options.input_file)?;
     fixer.fix(&mut coverage)?;

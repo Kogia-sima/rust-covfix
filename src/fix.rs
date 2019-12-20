@@ -15,13 +15,13 @@ impl State {
     }
 }
 
-pub struct Fixer {
+pub struct CoverageFixer {
     ne_reg: Vec<Regex>,
     p_reg: Vec<Regex>,
     ts_reg: Vec<Regex>,
 }
 
-impl Fixer {
+impl CoverageFixer {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
             ne_reg: vec![
