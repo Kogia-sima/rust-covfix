@@ -2,7 +2,7 @@ use error_chain::bail;
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
 
-use crate::common::{
+use crate::coverage::{
     BranchCoverage, CoverageReader, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
     SupportedFile, TotalCoverage,
 };

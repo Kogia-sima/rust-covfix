@@ -2,7 +2,7 @@ use error_chain::bail;
 use regex::Regex;
 use std::fs;
 
-use crate::common::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage};
+use crate::coverage::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage};
 use crate::error::*;
 
 struct State {

@@ -1,5 +1,5 @@
-mod common;
-pub use common::*;
+mod coverage;
+pub use coverage::*;
 
 mod fix;
 pub use fix::*;
