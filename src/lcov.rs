@@ -1,3 +1,4 @@
+use error_chain::bail;
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
 
@@ -5,6 +6,7 @@ use crate::common::{
     BranchCoverage, CoverageReader, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
     SupportedFile, TotalCoverage,
 };
+use crate::error::*;
 
 /// Enumeration representing each line in 'lcov.info'
 enum RawData<'a> {
@@ -62,7 +64,7 @@ impl SupportedFile for LcovParser {
 }
 
 impl CoverageReader for LcovParser {
-    fn read<R: BufRead>(&self, reader: &mut R) -> PackageCoverage {
+    fn read<R: BufRead>(&self, reader: &mut R) -> Result<PackageCoverage, Error> {
         let mut line_buf = String::with_capacity(120);
         let mut line_coverages = Vec::new();
         let mut branch_coverages = Vec::new();
@@ -105,7 +107,7 @@ impl CoverageReader for LcovParser {
                 RawData::EndOfRecord => {
                     let filepath = self.root.join(&filename);
                     if !filepath.is_file() {
-                        panic!("Source file not found: {:?}", filepath);
+                        bail!(ErrorKind::SourceFileNotFound(filepath.to_owned()));
                     }
 
                     let file_coverage = FileCoverage::new(
@@ -124,13 +126,13 @@ impl CoverageReader for LcovParser {
             line_buf.clear();
         }
 
-        PackageCoverage::new(testname, file_coverages)
+        Ok(PackageCoverage::new(testname, file_coverages))
     }
 }
 
 impl CoverageWriter for LcovParser {
-    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) {
-        self.write_package_coverage(writer, data);
+    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error> {
+        self.write_package_coverage(writer, data)
     }
 }
 
@@ -192,36 +194,52 @@ impl LcovParser {
         }
     }
 
-    fn write_package_coverage<W: Write>(&self, writer: &mut W, data: &PackageCoverage) {
-        writeln!(writer, "TN:{}", data.name()).unwrap();
+    fn write_package_coverage<W: Write>(
+        &self,
+        writer: &mut W,
+        data: &PackageCoverage,
+    ) -> Result<(), Error> {
+        writeln!(writer, "TN:{}", data.name())?;
 
         for cov in data.file_coverages() {
-            self.write_file_coverage(writer, cov);
+            self.write_file_coverage(writer, cov)?;
         }
+
+        Ok(())
     }
 
-    fn write_file_coverage<W: Write>(&self, writer: &mut W, data: &FileCoverage) {
+    fn write_file_coverage<W: Write>(
+        &self,
+        writer: &mut W,
+        data: &FileCoverage,
+    ) -> Result<(), Error> {
         let path = data.path().strip_prefix(&self.root).unwrap();
-        writeln!(writer, "SF:{}", path.display()).unwrap();
+        writeln!(writer, "SF:{}", path.display())?;
 
         for cov in data.branch_coverages() {
-            self.write_branch_coverage(writer, cov);
+            self.write_branch_coverage(writer, cov)?;
         }
 
-        writeln!(writer, "BRF:{}", data.branch_total()).unwrap();
-        writeln!(writer, "BRH:{}", data.branch_executed()).unwrap();
+        writeln!(writer, "BRF:{}", data.branch_total())?;
+        writeln!(writer, "BRH:{}", data.branch_executed())?;
 
         for cov in data.line_coverages() {
-            self.write_line_coverage(writer, cov);
+            self.write_line_coverage(writer, cov)?;
         }
 
-        writeln!(writer, "LF:{}", data.line_total()).unwrap();
-        writeln!(writer, "LH:{}", data.line_executed()).unwrap();
+        writeln!(writer, "LF:{}", data.line_total())?;
+        writeln!(writer, "LH:{}", data.line_executed())?;
 
-        writeln!(writer, "end_of_record").unwrap();
+        writeln!(writer, "end_of_record")?;
+
+        Ok(())
     }
 
-    fn write_branch_coverage<W: Write>(&self, writer: &mut W, data: &BranchCoverage) {
+    fn write_branch_coverage<W: Write>(
+        &self,
+        writer: &mut W,
+        data: &BranchCoverage,
+    ) -> Result<(), Error> {
         if let Some(line_number) = data.line_number {
             writeln!(
                 writer,
@@ -230,14 +248,21 @@ impl LcovParser {
                 data.block_number.unwrap_or(0),
                 data.branch_number.unwrap_or(0),
                 if data.taken { "1" } else { "-" }
-            )
-            .unwrap();
+            )?;
         }
+
+        Ok(())
     }
 
-    fn write_line_coverage<W: Write>(&self, writer: &mut W, data: &LineCoverage) {
+    fn write_line_coverage<W: Write>(
+        &self,
+        writer: &mut W,
+        data: &LineCoverage,
+    ) -> Result<(), Error> {
         if let Some(count) = data.count {
-            writeln!(writer, "DA:{},{}", data.line_number + 1, count).unwrap();
+            writeln!(writer, "DA:{},{}", data.line_number + 1, count)?;
         }
+
+        Ok(())
     }
 }

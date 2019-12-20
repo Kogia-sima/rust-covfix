@@ -1,27 +1,42 @@
 use argparse::{ArgumentParser, Print, Store, StoreOption};
+use error_chain::{bail, ChainedError};
 use std::env;
 use std::io::BufWriter;
 use std::path::PathBuf;
+use std::process;
 
+use rust_covfix::error::*;
 use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
 
 fn main() {
-    let options = Arguments::parse();
-    let root_dir = options.root.unwrap_or_else(find_root_dir);
+    if let Err(e) = run() {
+        eprintln!("{}", e.display_chain());
+        process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Error> {
+    let options = Arguments::parse()?;
+    let root_dir = options
+        .root
+        .or_else(find_root_dir)
+        .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
 
     let parser = LcovParser::new(root_dir);
-    let fixer = Fixer::new();
+    let fixer = Fixer::new().chain_err(|| "Failed to initialize fixer")?;
 
-    let mut coverage = parser.read_from_file(options.input_file);
-    fixer.fix(&mut coverage);
+    let mut coverage = parser.read_from_file(options.input_file)?;
+    fixer.fix(&mut coverage)?;
 
     if let Some(file) = options.output_file {
-        parser.write_to_file(&coverage, file);
+        parser.write_to_file(&coverage, file)?;
     } else {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
-        parser.write(&coverage, &mut writer);
+        parser.write(&coverage, &mut writer)?;
     }
+
+    Ok(())
 }
 
 struct Arguments {
@@ -31,7 +46,7 @@ struct Arguments {
 }
 
 impl Arguments {
-    fn parse() -> Arguments {
+    fn parse() -> Result<Arguments, Error> {
         let mut args = Arguments {
             root: None,
             input_file: PathBuf::new(),
@@ -62,30 +77,32 @@ impl Arguments {
         ap.parse_args_or_exit();
         drop(ap);
 
-        args.validate();
-        args
+        args.validate()?;
+        Ok(args)
     }
 
-    fn validate(&mut self) {
+    fn validate(&mut self) -> Result<(), Error> {
         if let Some(ref root) = self.root {
             if !root.is_dir() {
-                panic!("Directory not found: \"{}\"", root.display());
+                bail!("Directory not found: {:?}", root);
             }
         }
 
         if !self.input_file.is_file() {
-            panic!("Input file not found: \"{}\"", self.input_file.display());
+            bail!("Input file not found: {:?}", self.input_file);
         }
+
+        Ok(())
     }
 }
 
-fn find_root_dir() -> PathBuf {
+fn find_root_dir() -> Option<PathBuf> {
     let mut path = env::current_dir().expect("cannot detect the current directory.");
     path.push("target");
 
     if path.is_dir() {
         path.pop();
-        return path;
+        return Some(path);
     }
 
     path.pop();
@@ -95,11 +112,11 @@ fn find_root_dir() -> PathBuf {
 
         if path.is_dir() {
             path.pop();
-            return path;
+            return Some(path);
         }
 
         path.pop();
     }
 
-    panic!("cannot find the project root directory.\nDid you run `cargo test` at first?");
+    None
 }
