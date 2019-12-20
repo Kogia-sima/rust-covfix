@@ -1,7 +1,8 @@
+use error_chain::bail;
 use regex::Regex;
-use std::fs;
 
 use crate::common::{BranchCoverage, FileCoverage, LineCoverage, PackageCoverage, SourceCode};
+use crate::error::*;
 
 struct State {
     is_test: bool,
@@ -20,37 +21,37 @@ pub struct Fixer {
 }
 
 impl Fixer {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Result<Self, Error> {
+        Ok(Self {
             ne_reg: vec![
                 Regex::new(
                     r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-                )
-                .unwrap(),
-                Regex::new(r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$").unwrap(),
-                Regex::new(r"^\s*pub\s*enum\s*.*?\{\s*(?://.*)?$").unwrap(),
+                )?,
+                Regex::new(r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$")?,
+                Regex::new(r"^\s*pub\s*enum\s*.*?\{\s*(?://.*)?$")?,
             ],
             p_reg: vec![
-                Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$").unwrap(),
-                Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$").unwrap(),
+                Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$")?,
+                Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$")?,
             ],
-            ts_reg: vec![Regex::new(r"^\s*mod\s*test\s*\{\s*(?://.*)?$").unwrap()],
-        }
+            ts_reg: vec![Regex::new(r"^\s*mod\s*test\s*\{\s*(?://.*)?$")?],
+        })
     }
 
     /// fix coverage information
-    pub fn fix(&self, data: &mut PackageCoverage) {
+    pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
         for mut file_cov in &mut data.file_coverages {
             let path = file_cov.path();
             if !path.is_file() {
-                panic!("Source file not found: {:?}", path);
+                bail!(ErrorKind::SourceFileNotFound(path.to_owned()));
             }
 
-            let content = fs::read_to_string(path).unwrap();
-            let source = SourceCode::new(content);
+            let source = SourceCode::from_file(path)?;
 
             self.process_file(&source, &mut file_cov);
         }
+
+        Ok(())
     }
 
     // thread unsafe method
@@ -140,11 +141,5 @@ impl Fixer {
                 branch_covs.iter_mut().for_each(|v| v.taken = true);
             }
         }
-    }
-}
-
-impl Default for Fixer {
-    fn default() -> Self {
-        Self::new()
     }
 }

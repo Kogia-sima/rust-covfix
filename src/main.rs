@@ -3,25 +3,28 @@ use std::env;
 use std::io::BufWriter;
 use std::path::PathBuf;
 
+use rust_covfix::error::*;
 use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
 
-fn main() {
+fn main() -> Result<(), Error> {
     let options = Arguments::parse();
     let root_dir = options.root.unwrap_or_else(find_root_dir);
 
     let parser = LcovParser::new(root_dir);
-    let fixer = Fixer::new();
+    let fixer = Fixer::new().chain_err(|| "Failed to initialize fixer")?;
 
-    let mut coverage = parser.read_from_file(options.input_file);
-    fixer.fix(&mut coverage);
+    let mut coverage = parser.read_from_file(options.input_file)?;
+    fixer.fix(&mut coverage)?;
 
     if let Some(file) = options.output_file {
-        parser.write_to_file(&coverage, file);
+        parser.write_to_file(&coverage, file)?;
     } else {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
-        parser.write(&coverage, &mut writer);
+        parser.write(&coverage, &mut writer)?;
     }
+
+    Ok(())
 }
 
 struct Arguments {

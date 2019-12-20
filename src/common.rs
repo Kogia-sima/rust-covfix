@@ -3,6 +3,8 @@ use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::slice;
 
+use crate::error::*;
+
 pub struct SourceCode {
     // WARNING! Do not edit buffer after the object is initialized
     #[allow(dead_code)]
@@ -18,9 +20,10 @@ impl SourceCode {
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
-    pub fn from_file(path: &Path) -> Self {
-        let buffer = std::fs::read_to_string(path).unwrap();
-        Self::new(buffer)
+    pub fn from_file(path: &Path) -> Result<Self, Error> {
+        let buffer = std::fs::read_to_string(path)
+            .chain_err(|| format!("Failed to open source file {:?}", path))?;
+        Ok(Self::new(buffer))
     }
 
     #[cfg_attr(not(feature = "coverage"), inline)]
@@ -208,10 +211,12 @@ pub trait SupportedFile {
 }
 
 pub trait CoverageReader {
-    fn read<R: BufRead>(&self, reader: &mut R) -> PackageCoverage;
+    fn read<R: BufRead>(&self, reader: &mut R) -> Result<PackageCoverage, Error>;
 
-    fn read_from_file<P: AsRef<Path>>(&self, path: P) -> PackageCoverage {
-        let f = fs::File::open(path).unwrap();
+    fn read_from_file<P: AsRef<Path>>(&self, path: P) -> Result<PackageCoverage, Error> {
+        let path = path.as_ref();
+        let f = fs::File::open(path)
+            .chain_err(|| format!("Failed to open coverage file {:?}", path))?;
         let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(8192);
         let mut reader = BufReader::with_capacity(capacity, f);
         self.read(&mut reader)
@@ -219,12 +224,14 @@ pub trait CoverageReader {
 }
 
 pub trait CoverageWriter {
-    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W);
+    fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error>;
 
-    fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) {
-        let f = fs::File::create(path.as_ref()).unwrap();
+    fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) -> Result<(), Error> {
+        let path = path.as_ref();
+        let f = fs::File::create(path)
+            .chain_err(|| format!("Failed to save coverage into file {:?}", path))?;
         let mut writer = BufWriter::new(f);
-        self.write(&data, &mut writer);
+        self.write(&data, &mut writer)
     }
 }
 
