@@ -117,7 +117,7 @@ impl CoverageReader for LcovParser {
             line_buf.clear();
         }
 
-        Ok(PackageCoverage::new(testname, file_coverages))
+        Ok(PackageCoverage::with_test_name(testname, file_coverages))
     }
 }
 

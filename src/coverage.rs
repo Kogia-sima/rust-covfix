@@ -65,7 +65,11 @@ pub struct PackageCoverage {
 }
 
 impl PackageCoverage {
-    pub fn new<T: Into<String>>(name: T, file_coverages: Vec<FileCoverage>) -> Self {
+    pub fn new(file_coverages: Vec<FileCoverage>) -> Self {
+        Self::with_test_name("", file_coverages)
+    }
+
+    pub fn with_test_name<T: Into<String>>(name: T, file_coverages: Vec<FileCoverage>) -> Self {
         Self {
             name: name.into(),
             file_coverages,
