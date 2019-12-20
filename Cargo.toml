@@ -26,7 +26,7 @@ doctest = false
 default = ["cli", "backtrace", "lcov"]
 cli = ["argparse"]
 cobertura = ["quick-xml"]
-coverage = []
+noinline = []
 lcov = []
 backtrace = ["error-chain/backtrace"]
 

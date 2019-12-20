@@ -28,7 +28,7 @@ pub struct FileCoverage {
 }
 
 impl FileCoverage {
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new<P: Into<PathBuf>>(
         path: P,
         line_coverages: Vec<LineCoverage>,
@@ -41,17 +41,17 @@ impl FileCoverage {
         }
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn line_coverages(&self) -> &[LineCoverage] {
         &self.line_coverages
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn branch_coverages(&self) -> &[BranchCoverage] {
         &self.branch_coverages
     }
@@ -89,7 +89,7 @@ pub trait TotalCoverage {
 }
 
 impl TotalCoverage for FileCoverage {
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
         self.line_coverages
             .iter()
@@ -97,7 +97,7 @@ impl TotalCoverage for FileCoverage {
             .count()
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_total(&self) -> usize {
         self.line_coverages
             .iter()
@@ -105,40 +105,40 @@ impl TotalCoverage for FileCoverage {
             .count()
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn branch_executed(&self) -> usize {
         self.branch_coverages.iter().filter(|&v| v.taken).count()
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn branch_total(&self) -> usize {
         self.branch_coverages.len()
     }
 }
 
 impl TotalCoverage for PackageCoverage {
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.line_executed())
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_total(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.line_total())
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn branch_executed(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.branch_executed())
     }
 
-    #[cfg_attr(not(feature = "coverage"), inline)]
+    #[cfg_attr(not(feature = "noinline"), inline)]
     fn branch_total(&self) -> usize {
         self.file_coverages
             .iter()
