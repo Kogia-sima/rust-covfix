@@ -1,12 +1,21 @@
 use argparse::{ArgumentParser, Print, Store, StoreOption};
+use error_chain::ChainedError;
 use std::env;
 use std::io::BufWriter;
 use std::path::PathBuf;
+use std::process;
 
 use rust_covfix::error::*;
 use rust_covfix::{lcov::LcovParser, CoverageReader, CoverageWriter, Fixer};
 
-fn main() -> Result<(), Error> {
+fn main() {
+    if let Err(e) = run() {
+        eprintln!("{}", e.display_chain());
+        process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Error> {
     let options = Arguments::parse();
     let root_dir = options.root.unwrap_or_else(find_root_dir);
 
