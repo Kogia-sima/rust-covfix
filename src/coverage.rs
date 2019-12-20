@@ -81,6 +81,7 @@ impl PackageCoverage {
     }
 }
 
+#[doc(hidden)]
 pub trait TotalCoverage {
     fn line_executed(&self) -> usize;
     fn line_total(&self) -> usize;
@@ -88,6 +89,7 @@ pub trait TotalCoverage {
     fn branch_total(&self) -> usize;
 }
 
+#[doc(hidden)]
 impl TotalCoverage for FileCoverage {
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
@@ -116,6 +118,7 @@ impl TotalCoverage for FileCoverage {
     }
 }
 
+#[doc(hidden)]
 impl TotalCoverage for PackageCoverage {
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
