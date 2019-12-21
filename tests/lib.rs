@@ -57,3 +57,4 @@ fn copy_dir_contents(p1: &Path, p2: &Path) {
 
 // test modules
 mod fix;
+mod read_lcov;
