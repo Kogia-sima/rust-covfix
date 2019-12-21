@@ -54,3 +54,6 @@ fn copy_dir_contents(p1: &Path, p2: &Path) {
         target_path.pop();
     }
 }
+
+// test modules
+mod fix;
