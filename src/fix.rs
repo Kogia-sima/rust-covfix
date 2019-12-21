@@ -1,4 +1,3 @@
-use error_chain::bail;
 use regex::Regex;
 use std::fs;
 
@@ -50,11 +49,8 @@ impl CoverageFixer {
 
     fn process_file(&self, cov: &mut FileCoverage) -> Result<(), Error> {
         let path = cov.path();
-        if !path.is_file() {
-            bail!(ErrorKind::SourceFileNotFound(path.to_owned()));
-        }
-
-        let source = fs::read_to_string(path)?;
+        let source = fs::read_to_string(path)
+            .chain_err(|| format!("Failed to open source file: {:?}", path))?;
 
         cov.line_coverages.sort_unstable_by_key(|v| v.line_number);
         cov.branch_coverages.sort_unstable_by_key(|v| v.line_number);
@@ -136,7 +132,7 @@ impl CoverageFixer {
 
         if let Some(&mut ref mut branch_covs) = branch_covs {
             let should_be_fixed = match line_cov {
-                Some(&mut LineCoverage { count: None, .. }) => false,
+                Some(&mut LineCoverage { count: Some(0), .. }) => false,
                 _ => true,
             };
             if should_be_fixed && self.p_reg.iter().any(|r| r.is_match(line)) {
