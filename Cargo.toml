@@ -40,3 +40,4 @@ features = ["std", "unicode-perl"]
 
 [dev-dependencies]
 getrandom = "0.1.13"
+fs2 = "0.4.3"
