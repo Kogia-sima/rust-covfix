@@ -57,3 +57,36 @@ fn closing_brackets() {
         &*expected_line_covs
     );
 }
+
+#[test]
+fn tests_mod() {
+    let ws = WorkSpace::from_template("./tests/fix");
+    let source_file = ws.path().join("tests_mod.rs");
+
+    let original_line_covs = line_coveages!(
+        0 => 1,
+        1 => 1,
+        2 => 1,
+        9 => 1,
+        10 => 1,
+    );
+
+    let expected_line_covs = line_coveages!(
+        0 => 1,
+        1 => 1,
+    );
+
+    let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
+        &source_file,
+        original_line_covs,
+        vec![],
+    )]);
+
+    let fixer = CoverageFixer::new().unwrap();
+    fixer.fix(&mut coverage).unwrap();
+
+    assert_eq!(
+        coverage.file_coverages()[0].line_coverages(),
+        &*expected_line_covs
+    );
+}
