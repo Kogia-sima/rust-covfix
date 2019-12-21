@@ -23,13 +23,9 @@ pub struct CoverageFixer {
 impl CoverageFixer {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
-            ne_reg: vec![
-                Regex::new(
-                    r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-                )?,
-                Regex::new(r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$")?,
-                Regex::new(r"^\s*pub\s*enum\s*.*?\{\s*(?://.*)?$")?,
-            ],
+            ne_reg: vec![Regex::new(
+                r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
+            )?],
             p_reg: vec![
                 Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$")?,
                 Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$")?,
