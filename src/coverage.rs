@@ -7,7 +7,7 @@ use crate::error::*;
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineCoverage {
     pub line_number: usize,
-    pub count: Option<u32>,
+    pub count: u32,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -97,18 +97,12 @@ pub trait TotalCoverage {
 impl TotalCoverage for FileCoverage {
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
-        self.line_coverages
-            .iter()
-            .filter(|&v| v.count.map_or(false, |v| v > 0))
-            .count()
+        self.line_coverages.iter().filter(|&v| v.count > 0).count()
     }
 
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_total(&self) -> usize {
-        self.line_coverages
-            .iter()
-            .filter(|&v| v.count.is_some())
-            .count()
+        self.line_coverages.len()
     }
 
     #[cfg_attr(not(feature = "noinline"), inline)]

@@ -98,6 +98,8 @@ impl CoverageFixer {
             }
         }
 
+        cov.line_coverages.retain(|v| v.count != std::u32::MAX);
+
         Ok(())
     }
 
@@ -123,7 +125,7 @@ impl CoverageFixer {
 
         if self.ne_reg.iter().any(|r| r.is_match(line)) {
             if let Some(&mut ref mut line_cov) = line_cov {
-                line_cov.count = None
+                line_cov.count = std::u32::MAX;
             };
             if let Some(&mut ref mut branch_covs) = branch_covs {
                 branch_covs.iter_mut().for_each(|v| v.taken = false);
@@ -132,7 +134,7 @@ impl CoverageFixer {
 
         if let Some(&mut ref mut branch_covs) = branch_covs {
             let should_be_fixed = match line_cov {
-                Some(&mut LineCoverage { count: Some(0), .. }) => false,
+                Some(&mut LineCoverage { count: 0, .. }) => false,
                 _ => true,
             };
             if should_be_fixed && self.p_reg.iter().any(|r| r.is_match(line)) {
