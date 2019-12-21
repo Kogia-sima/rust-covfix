@@ -4,13 +4,13 @@ use std::path::{Path, PathBuf};
 
 use crate::error::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LineCoverage {
     pub line_number: usize,
     pub count: Option<u32>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BranchCoverage {
     pub line_number: Option<usize>,
     pub block_number: Option<usize>,
@@ -18,7 +18,7 @@ pub struct BranchCoverage {
     pub taken: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FileCoverage {
     path: PathBuf,
     #[doc(hidden)]
@@ -57,7 +57,7 @@ impl FileCoverage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PackageCoverage {
     name: String,
     #[doc(hidden)]
