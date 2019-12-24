@@ -1,5 +1,6 @@
 # rust-covfix
 [![Build Status](https://travis-ci.org/Kogia-sima/rust-covfix.svg?branch=master)](https://travis-ci.org/Kogia-sima/rust-covfix)
+[![Build status](https://ci.appveyor.com/api/projects/status/xc9jauk9nah5webf/branch/master?svg=true)](https://ci.appveyor.com/project/Kogiasima/rust-covfix/branch/master)
 [![Version](https://img.shields.io/crates/v/rust-covfix)](https://crates.io/crates/rust-covfix)
 [![docs](https://docs.rs/rust-covfix/badge.svg)](https://docs.rs/rust-covfix)
 ![GitHub Release Date](https://img.shields.io/github/release-date/Kogia-sima/rust-covfix?label=last%20release)
