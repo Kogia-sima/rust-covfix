@@ -16,7 +16,7 @@ cargo test $CARGO_OPTIONS
 
 if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
   zip -0 ccov.zip `find . \( -name "rust_covfix*.gc*" -o -name "test-*.gc*" \) -print`
-  ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info
+  ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" "tests/*" -o lcov.info
   ./target/debug/rust-covfix lcov.info -o lcov.info
   bash <(curl -s https://codecov.io/bash) -f lcov.info
 fi
