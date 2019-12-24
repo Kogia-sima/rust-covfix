@@ -33,7 +33,7 @@ before_deploy:
 
 deploy:
   provider: releases
-  cleanup: false
+  skip_cleanup: true
   file_glob: true
   file:
     - dist/*
