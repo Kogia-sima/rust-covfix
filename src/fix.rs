@@ -23,18 +23,14 @@ pub struct CoverageFixer {
 impl CoverageFixer {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
-            ne_reg: vec![
-                Regex::new(
-                    r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-                )?,
-                Regex::new(r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$")?,
-                Regex::new(r"^\s*pub\s*enum\s*.*?\{\s*(?://.*)?$")?,
-            ],
+            ne_reg: vec![Regex::new(
+                r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
+            )?],
             p_reg: vec![
                 Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$")?,
                 Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$")?,
             ],
-            ts_reg: vec![Regex::new(r"^\s*mod\s*test\s*\{\s*(?://.*)?$")?],
+            ts_reg: vec![Regex::new(r"^\s*mod\s*tests\s*\{\s*(?://.*)?$")?],
         })
     }
 
@@ -98,6 +94,11 @@ impl CoverageFixer {
             }
         }
 
+        cov.line_coverages
+            .retain(|v| v.line_number != std::usize::MAX);
+        cov.branch_coverages
+            .retain(|v| v.line_number != Some(std::usize::MAX));
+
         Ok(())
     }
 
@@ -109,6 +110,14 @@ impl CoverageFixer {
         state: &mut State,
     ) {
         if state.is_test {
+            if let Some(&mut ref mut line_cov) = line_cov {
+                line_cov.line_number = std::usize::MAX;
+            };
+            if let Some(&mut ref mut branch_covs) = branch_covs {
+                branch_covs
+                    .iter_mut()
+                    .for_each(|v| v.line_number = Some(std::usize::MAX));
+            }
             return;
         }
 
@@ -123,7 +132,7 @@ impl CoverageFixer {
 
         if self.ne_reg.iter().any(|r| r.is_match(line)) {
             if let Some(&mut ref mut line_cov) = line_cov {
-                line_cov.count = None
+                line_cov.line_number = std::usize::MAX;
             };
             if let Some(&mut ref mut branch_covs) = branch_covs {
                 branch_covs.iter_mut().for_each(|v| v.taken = false);
@@ -132,7 +141,7 @@ impl CoverageFixer {
 
         if let Some(&mut ref mut branch_covs) = branch_covs {
             let should_be_fixed = match line_cov {
-                Some(&mut LineCoverage { count: Some(0), .. }) => false,
+                Some(&mut LineCoverage { count: 0, .. }) => false,
                 _ => true,
             };
             if should_be_fixed && self.p_reg.iter().any(|r| r.is_match(line)) {
