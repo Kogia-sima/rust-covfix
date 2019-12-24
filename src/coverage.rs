@@ -150,8 +150,7 @@ impl TotalCoverage for PackageCoverage {
 pub trait CoverageReader {
     fn read<R: BufRead>(&self, reader: &mut R) -> Result<PackageCoverage, Error>;
 
-    fn read_from_file<P: AsRef<Path>>(&self, path: P) -> Result<PackageCoverage, Error> {
-        let path = path.as_ref();
+    fn read_from_file(&self, path: &Path) -> Result<PackageCoverage, Error> {
         let f = fs::File::open(path)
             .chain_err(|| format!("Failed to open coverage file {:?}", path))?;
         let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(8192);
@@ -163,8 +162,7 @@ pub trait CoverageReader {
 pub trait CoverageWriter {
     fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error>;
 
-    fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) -> Result<(), Error> {
-        let path = path.as_ref();
+    fn write_to_file(&self, data: &PackageCoverage, path: &Path) -> Result<(), Error> {
         let f = fs::File::create(path)
             .chain_err(|| format!("Failed to save coverage into file {:?}", path))?;
         let mut writer = BufWriter::new(f);

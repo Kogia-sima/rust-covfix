@@ -10,7 +10,7 @@ fn test() {
     let lcov_file = ws.path().join("lcov.info");
 
     let parser = LcovParser::new(ws.path());
-    let coverage = parser.read_from_file(lcov_file).unwrap();
+    let coverage = parser.read_from_file(&lcov_file).unwrap();
 
     let expected_coverage = PackageCoverage::new(vec![
         FileCoverage::new(
