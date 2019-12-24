@@ -14,7 +14,6 @@ pub struct LineCoverage {
 pub struct BranchCoverage {
     pub line_number: Option<usize>,
     pub block_number: Option<usize>,
-    pub branch_number: Option<usize>,
     pub taken: bool,
 }
 

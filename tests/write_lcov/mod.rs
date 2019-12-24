@@ -39,31 +39,26 @@ fn test() {
                     BranchCoverage {
                         line_number: Some(2),
                         block_number: Some(0),
-                        branch_number: Some(0),
                         taken: false,
                     },
                     BranchCoverage {
                         line_number: Some(2),
                         block_number: Some(0),
-                        branch_number: Some(1),
                         taken: false,
                     },
                     BranchCoverage {
                         line_number: Some(2),
                         block_number: Some(0),
-                        branch_number: Some(2),
                         taken: true,
                     },
                     BranchCoverage {
                         line_number: Some(7),
                         block_number: Some(0),
-                        branch_number: Some(0),
                         taken: true,
                     },
                     BranchCoverage {
                         line_number: Some(7),
                         block_number: Some(0),
-                        branch_number: Some(1),
                         taken: false,
                     },
                 ],
