@@ -57,5 +57,6 @@ fn copy_dir_contents(p1: &Path, p2: &Path) {
 
 // test modules
 mod fix;
+mod guess_game;
 mod read_lcov;
 mod write_lcov;
