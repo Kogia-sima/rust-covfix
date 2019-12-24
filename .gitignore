@@ -1,3 +1,6 @@
 /target
 /tests/**/target/
 **/*.rs.bk
+
+/bin/
+/coverage/
