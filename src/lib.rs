@@ -7,4 +7,9 @@ pub use fix::*;
 pub mod error;
 
 #[cfg(feature = "lcov")]
-pub mod lcov;
+mod lcov;
+
+pub mod parser {
+    #[cfg(feature = "lcov")]
+    pub use super::lcov::*;
+}

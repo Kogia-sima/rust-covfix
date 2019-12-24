@@ -2,7 +2,7 @@ use super::WorkSpace;
 use std::fs;
 
 use rust_covfix::{
-    lcov::LcovParser, BranchCoverage, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
+    parser::LcovParser, BranchCoverage, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
 };
 
 #[test]

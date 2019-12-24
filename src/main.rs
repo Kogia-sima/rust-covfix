@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process;
 
 use rust_covfix::error::*;
-use rust_covfix::{lcov::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
+use rust_covfix::{parser::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
 
 fn main() {
     if let Err(e) = run() {

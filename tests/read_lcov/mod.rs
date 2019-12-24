@@ -1,7 +1,7 @@
 use super::WorkSpace;
 
 use rust_covfix::{
-    lcov::LcovParser, BranchCoverage, CoverageReader, FileCoverage, LineCoverage, PackageCoverage,
+    parser::LcovParser, BranchCoverage, CoverageReader, FileCoverage, LineCoverage, PackageCoverage,
 };
 
 #[test]
