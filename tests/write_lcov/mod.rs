@@ -1,6 +1,5 @@
 use super::WorkSpace;
 use std::fs;
-use std::io::Cursor;
 
 use rust_covfix::{
     lcov::LcovParser, BranchCoverage, CoverageWriter, FileCoverage, LineCoverage, PackageCoverage,
@@ -9,9 +8,6 @@ use rust_covfix::{
 #[test]
 fn test() {
     let ws = WorkSpace::from_template("tests/write_lcov");
-    let lcov_file = ws.path().join("lcov.info");
-    let expected_content = fs::read_to_string(&lcov_file).unwrap();
-
     let coverage = PackageCoverage::with_test_name(
         "write_lcov",
         vec![
@@ -101,12 +97,14 @@ fn test() {
         ],
     );
 
-    let buffer: Vec<u8> = Vec::with_capacity(expected_content.len() + 1);
-    let mut writer = Cursor::new(buffer);
-
     let parser = LcovParser::new(ws.path());
-    parser.write(&coverage, &mut writer).unwrap();
+    let target_file = ws.path().join("lcov2.info");
+    parser.write_to_file(&coverage, &target_file).unwrap();
 
-    let content = String::from_utf8(writer.into_inner()).unwrap();
+    let content = fs::read_to_string(target_file).unwrap();
+
+    let lcov_file = ws.path().join("lcov.info");
+    let expected_content = fs::read_to_string(&lcov_file).unwrap();
+
     assert_eq!(content.trim_end(), expected_content.trim_end());
 }
