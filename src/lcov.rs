@@ -82,16 +82,17 @@ impl CoverageReader for LcovParser {
                     filename = file.into();
                 }
                 RawData::DA(line, count) => {
-                    line_coverages.push(LineCoverage {
-                        line_number: line.saturating_sub(1),
-                        count: Some(count),
-                    });
+                    if line > 0 {
+                        line_coverages.push(LineCoverage {
+                            line_number: line - 1,
+                            count,
+                        });
+                    }
                 }
-                RawData::BRDA(line, block, branch, taken) => {
+                RawData::BRDA(line, block, _, taken) => {
                     branch_coverages.push(BranchCoverage {
                         line_number: Some(line.saturating_sub(1)),
                         block_number: Some(block),
-                        branch_number: Some(branch),
                         taken,
                     });
                 }
@@ -207,8 +208,17 @@ impl LcovParser {
         let path = data.path().strip_prefix(&self.root).unwrap();
         writeln!(writer, "SF:{}", path.display())?;
 
+        let mut current_line = Some(0);
+        let mut count = 0;
         for cov in data.branch_coverages() {
-            self.write_branch_coverage(writer, cov)?;
+            if cov.line_number == current_line {
+                count += 1;
+            } else {
+                count = 0;
+            }
+            current_line = cov.line_number;
+
+            self.write_branch_coverage(writer, cov, count)?;
         }
 
         writeln!(writer, "BRF:{}", data.branch_total())?;
@@ -230,6 +240,7 @@ impl LcovParser {
         &self,
         writer: &mut W,
         data: &BranchCoverage,
+        branch_number: usize,
     ) -> Result<(), Error> {
         if let Some(line_number) = data.line_number {
             writeln!(
@@ -237,7 +248,7 @@ impl LcovParser {
                 "BRDA:{},{},{},{}",
                 line_number + 1,
                 data.block_number.unwrap_or(0),
-                data.branch_number.unwrap_or(0),
+                branch_number,
                 if data.taken { "1" } else { "-" }
             )?;
         }
@@ -250,9 +261,7 @@ impl LcovParser {
         writer: &mut W,
         data: &LineCoverage,
     ) -> Result<(), Error> {
-        if let Some(count) = data.count {
-            writeln!(writer, "DA:{},{}", data.line_number + 1, count)?;
-        }
+        writeln!(writer, "DA:{},{}", data.line_number + 1, data.count)?;
 
         Ok(())
     }

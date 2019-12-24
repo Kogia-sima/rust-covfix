@@ -1,4 +1,3 @@
-use error_chain::bail;
 use regex::Regex;
 use std::fs;
 
@@ -24,18 +23,14 @@ pub struct CoverageFixer {
 impl CoverageFixer {
     pub fn new() -> Result<Self, Error> {
         Ok(Self {
-            ne_reg: vec![
-                Regex::new(
-                    r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-                )?,
-                Regex::new(r"^\s*pub\s*struct\s*.*?\{\s*(?://.*)?$")?,
-                Regex::new(r"^\s*pub\s*enum\s*.*?\{\s*(?://.*)?$")?,
-            ],
+            ne_reg: vec![Regex::new(
+                r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
+            )?],
             p_reg: vec![
                 Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$")?,
                 Regex::new(r"^\s*while\s*.*\{\s*(?://.*)?$")?,
             ],
-            ts_reg: vec![Regex::new(r"^\s*mod\s*test\s*\{\s*(?://.*)?$")?],
+            ts_reg: vec![Regex::new(r"^\s*mod\s*tests\s*\{\s*(?://.*)?$")?],
         })
     }
 
@@ -50,11 +45,8 @@ impl CoverageFixer {
 
     fn process_file(&self, cov: &mut FileCoverage) -> Result<(), Error> {
         let path = cov.path();
-        if !path.is_file() {
-            bail!(ErrorKind::SourceFileNotFound(path.to_owned()));
-        }
-
-        let source = fs::read_to_string(path)?;
+        let source = fs::read_to_string(path)
+            .chain_err(|| format!("Failed to open source file: {:?}", path))?;
 
         cov.line_coverages.sort_unstable_by_key(|v| v.line_number);
         cov.branch_coverages.sort_unstable_by_key(|v| v.line_number);
@@ -102,6 +94,11 @@ impl CoverageFixer {
             }
         }
 
+        cov.line_coverages
+            .retain(|v| v.line_number != std::usize::MAX);
+        cov.branch_coverages
+            .retain(|v| v.line_number != Some(std::usize::MAX));
+
         Ok(())
     }
 
@@ -113,6 +110,14 @@ impl CoverageFixer {
         state: &mut State,
     ) {
         if state.is_test {
+            if let Some(&mut ref mut line_cov) = line_cov {
+                line_cov.line_number = std::usize::MAX;
+            };
+            if let Some(&mut ref mut branch_covs) = branch_covs {
+                branch_covs
+                    .iter_mut()
+                    .for_each(|v| v.line_number = Some(std::usize::MAX));
+            }
             return;
         }
 
@@ -127,7 +132,7 @@ impl CoverageFixer {
 
         if self.ne_reg.iter().any(|r| r.is_match(line)) {
             if let Some(&mut ref mut line_cov) = line_cov {
-                line_cov.count = None
+                line_cov.line_number = std::usize::MAX;
             };
             if let Some(&mut ref mut branch_covs) = branch_covs {
                 branch_covs.iter_mut().for_each(|v| v.taken = false);
@@ -136,7 +141,7 @@ impl CoverageFixer {
 
         if let Some(&mut ref mut branch_covs) = branch_covs {
             let should_be_fixed = match line_cov {
-                Some(&mut LineCoverage { count: None, .. }) => false,
+                Some(&mut LineCoverage { count: 0, .. }) => false,
                 _ => true,
             };
             if should_be_fixed && self.p_reg.iter().any(|r| r.is_match(line)) {

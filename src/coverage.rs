@@ -4,21 +4,20 @@ use std::path::{Path, PathBuf};
 
 use crate::error::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LineCoverage {
     pub line_number: usize,
-    pub count: Option<u32>,
+    pub count: u32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BranchCoverage {
     pub line_number: Option<usize>,
     pub block_number: Option<usize>,
-    pub branch_number: Option<usize>,
     pub taken: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FileCoverage {
     path: PathBuf,
     #[doc(hidden)]
@@ -57,7 +56,7 @@ impl FileCoverage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PackageCoverage {
     name: String,
     #[doc(hidden)]
@@ -97,18 +96,12 @@ pub trait TotalCoverage {
 impl TotalCoverage for FileCoverage {
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_executed(&self) -> usize {
-        self.line_coverages
-            .iter()
-            .filter(|&v| v.count.map_or(false, |v| v > 0))
-            .count()
+        self.line_coverages.iter().filter(|&v| v.count > 0).count()
     }
 
     #[cfg_attr(not(feature = "noinline"), inline)]
     fn line_total(&self) -> usize {
-        self.line_coverages
-            .iter()
-            .filter(|&v| v.count.is_some())
-            .count()
+        self.line_coverages.len()
     }
 
     #[cfg_attr(not(feature = "noinline"), inline)]
@@ -156,8 +149,7 @@ impl TotalCoverage for PackageCoverage {
 pub trait CoverageReader {
     fn read<R: BufRead>(&self, reader: &mut R) -> Result<PackageCoverage, Error>;
 
-    fn read_from_file<P: AsRef<Path>>(&self, path: P) -> Result<PackageCoverage, Error> {
-        let path = path.as_ref();
+    fn read_from_file(&self, path: &Path) -> Result<PackageCoverage, Error> {
         let f = fs::File::open(path)
             .chain_err(|| format!("Failed to open coverage file {:?}", path))?;
         let capacity = f.metadata().map(|m| m.len() as usize + 1).unwrap_or(8192);
@@ -169,8 +161,7 @@ pub trait CoverageReader {
 pub trait CoverageWriter {
     fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error>;
 
-    fn write_to_file<P: AsRef<Path>>(&self, data: &PackageCoverage, path: P) -> Result<(), Error> {
-        let path = path.as_ref();
+    fn write_to_file(&self, data: &PackageCoverage, path: &Path) -> Result<(), Error> {
         let f = fs::File::create(path)
             .chain_err(|| format!("Failed to save coverage into file {:?}", path))?;
         let mut writer = BufWriter::new(f);

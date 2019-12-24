@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use std::process;
 
 use rust_covfix::error::*;
-use rust_covfix::{lcov::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
+use rust_covfix::{parser::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
 
 fn main() {
     if let Err(e) = run() {
@@ -25,11 +25,11 @@ fn run() -> Result<(), Error> {
     let parser = LcovParser::new(root_dir);
     let fixer = CoverageFixer::new().chain_err(|| "Failed to initialize fixer")?;
 
-    let mut coverage = parser.read_from_file(options.input_file)?;
+    let mut coverage = parser.read_from_file(&options.input_file)?;
     fixer.fix(&mut coverage)?;
 
     if let Some(file) = options.output_file {
-        parser.write_to_file(&coverage, file)?;
+        parser.write_to_file(&coverage, &file)?;
     } else {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
