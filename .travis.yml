@@ -10,7 +10,9 @@ matrix:
   include:
     - os: linux
       rust: stable
-      env: TARGET=x86_64-unknown-linux-gnu
+      env:
+        - TARGET=x86_64-unknown-linux-gnu
+        - CARGO_OPTIONS="--all-features"
 
     - os: linux
       rust: nightly
@@ -25,8 +27,22 @@ env:
     - RUST_BACKTRACE=1
 
 script:
-  - cargo check
-  - cargo test
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
+      export CARGO_INCREMENTAL=0;
+      export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads";
+
+      wget https://github.com/mozilla/grcov/releases/download/v0.5.7/grcov-linux-x86_64.tar.bz2
+      tar xvf grcov-linux-x86_64.tar.bz2
+    fi
+  - cargo check $CARGO_OPTIONS
+  - cargo test $CARGO_OPTIONS
+  - |
+    if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
+      zip -0 ccov.zip `find . \( -name "rust_covfix*.gc*" -o -name "test-*.gc*" \) -print`;
+      ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" -o lcov.info;
+      bash <(curl -s https://codecov.io/bash) -f lcov.info;
+    fi
 
 before_deploy:
   - bash .ci/before_deploy.sh
