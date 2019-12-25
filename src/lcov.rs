@@ -99,7 +99,7 @@ impl CoverageReader for LcovParser {
                 RawData::EndOfRecord => {
                     let filepath = self.root.join(&filename);
                     if !filepath.is_file() {
-                        bail!(ErrorKind::SourceFileNotFound(filepath.to_owned()));
+                        bail!(ErrorKind::SourceFileNotFound(filepath));
                     }
 
                     let file_coverage = FileCoverage::new(
