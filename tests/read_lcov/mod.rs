@@ -5,7 +5,7 @@ use rust_covfix::{
 };
 
 #[test]
-fn test() {
+fn simple() {
     let ws = WorkSpace::from_template("tests/read_lcov");
     let lcov_file = ws.path().join("lcov.info");
 
@@ -70,6 +70,19 @@ fn test() {
             vec![],
         ),
     ]);
+
+    assert_eq!(coverage, expected_coverage);
+}
+
+#[test]
+fn empty() {
+    let ws = WorkSpace::from_template("tests/read_lcov");
+    let lcov_file = ws.path().join("lcov_empty.info");
+
+    let parser = LcovParser::new(ws.path());
+    let coverage = parser.read_from_file(&lcov_file).unwrap();
+
+    let expected_coverage = PackageCoverage::new(vec![]);
 
     assert_eq!(coverage, expected_coverage);
 }
