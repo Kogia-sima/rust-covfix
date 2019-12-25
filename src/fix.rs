@@ -135,7 +135,9 @@ impl CoverageFixer {
                 line_cov.line_number = std::usize::MAX;
             };
             if let Some(&mut ref mut branch_covs) = branch_covs {
-                branch_covs.iter_mut().for_each(|v| v.taken = false);
+                branch_covs
+                    .iter_mut()
+                    .for_each(|v| v.line_number = Some(std::usize::MAX));
             }
         }
 
