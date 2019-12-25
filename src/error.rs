@@ -14,6 +14,7 @@ error_chain! {
         FmtError(fmt::Error);
         IoError(io::Error);
         RegexError(regex::Error);
+        XMLError(quick_xml::Error) #[cfg(feature = "cobertura")];
     }
 
     // Custom errors
