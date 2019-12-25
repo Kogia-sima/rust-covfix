@@ -12,8 +12,16 @@ pub mod error;
 #[cfg_attr(docsrs, doc(cfg(feature = "lcov")))]
 mod lcov;
 
+#[cfg(feature = "cobertura")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cobertura")))]
+mod cobertura;
+
 pub mod parser {
     #[cfg(feature = "lcov")]
     #[cfg_attr(docsrs, doc(cfg(feature = "lcov")))]
     pub use super::lcov::*;
+
+    #[cfg(feature = "cobertura")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "cobertura")))]
+    pub use super::cobertura::*;
 }
