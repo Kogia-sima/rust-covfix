@@ -400,7 +400,7 @@ fn bytes_to_path(bytes: &[u8]) -> PathBuf {
 
 #[cfg(not(unix))]
 fn bytes_to_path(bytes: &[u8]) -> PathBuf {
-    let s = std::str::from_utf8(bytes);
+    let s = std::str::from_utf8(bytes).unwrap().to_owned();
     PathBuf::from(s)
 }
 
