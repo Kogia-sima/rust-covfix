@@ -6,6 +6,8 @@ pub use coverage::*;
 mod fix;
 pub use fix::*;
 
+pub mod rule;
+
 pub mod error;
 
 #[cfg(feature = "lcov")]
