@@ -167,7 +167,7 @@ impl TestRule {
     pub fn new() -> Self {
         Self {
             cfg_reg: Regex::new(
-                r"^\s*#\s*\[\s*cfg\((?:test)|(?:.*[ \t\(]test[,\)]))\s*\]\s*(?://.*)?$",
+                r"^\s*#\s*\[\s*cfg\((?:test)|(?:.*[ \t\(]test[,\)])\)\s*\]\s*(?://.*)?$",
             )
             .unwrap(),
             mod_reg: Regex::new(r"^\s*(?:pub\s+)?mod\s+tests?\s*\{").unwrap(),
