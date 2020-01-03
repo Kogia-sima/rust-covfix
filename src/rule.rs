@@ -111,6 +111,10 @@ impl ExactSizeIterator for PerLineIterator<'_, '_> {
     }
 }
 
+pub trait Rule {
+    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage);
+}
+
 pub struct CloseBlockRule {
     reg: Regex,
 }
@@ -124,8 +128,10 @@ impl CloseBlockRule {
             .unwrap(),
         }
     }
+}
 
-    pub fn fix(&self, source: &str, file_cov: &mut FileCoverage) {
+impl Rule for CloseBlockRule {
+    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         for entry in PerLineIterator::new(source, file_cov) {
             if entry.line_cov.is_none() && entry.branch_covs.is_empty() {
                 continue;
@@ -167,8 +173,10 @@ impl TestRule {
             mod_reg: Regex::new(r"^\s*(?:pub\s+)?mod\s+tests?\s*\{").unwrap(),
         }
     }
+}
 
-    pub fn fix(&self, source: &str, file_cov: &mut FileCoverage) {
+impl Rule for TestRule {
+    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         fn ignore_coverages(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
                 line_cov.line_number = std::usize::MAX;
@@ -230,8 +238,10 @@ impl LoopRule {
             loop_reg: Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$").unwrap(),
         }
     }
+}
 
-    pub fn fix(&self, source: &str, file_cov: &mut FileCoverage) {
+impl Rule for LoopRule {
+    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         for entry in PerLineIterator::new(source, file_cov) {
             if entry.branch_covs.is_empty() {
                 continue;
@@ -267,7 +277,7 @@ impl DeriveRule {
         }
     }
 
-    pub fn fix(&self, source: &str, file_cov: &mut FileCoverage) {
+    pub fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         for entry in PerLineIterator::new(source, file_cov) {
 
         }
