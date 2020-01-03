@@ -195,26 +195,25 @@ impl Rule for TestRule {
             if inside_test {
                 ignore_coverages(&mut entry);
 
-                let line = entry.line.trim_start();
-                if line.bytes().next() == Some(b'}') {
+                if entry.line.bytes().next() == Some(b'}') {
                     inside_test = false;
                 }
-            }
-            if !cfg_found {
+            } else if !cfg_found {
                 if self.cfg_reg.is_match(entry.line) {
                     cfg_found = true;
                 }
             } else {
+                if self.mod_reg.is_match(entry.line) {
+                    inside_test = true;
+                    cfg_found = false;
+                    continue;
+                }
+
                 let line = entry.line.trim_start();
                 if let Some(b) = line.bytes().next() {
                     if b != b'#' && b != b'/' {
                         cfg_found = false;
-                        continue;
                     }
-                }
-                if self.mod_reg.is_match(entry.line) {
-                    inside_test = true;
-                    cfg_found = false;
                 }
             }
         }
