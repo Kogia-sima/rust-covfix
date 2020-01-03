@@ -23,7 +23,7 @@ fn run() -> Result<(), Error> {
         .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
 
     let parser = LcovParser::new(root_dir);
-    let fixer = CoverageFixer::new().chain_err(|| "Failed to initialize fixer")?;
+    let fixer = CoverageFixer::new();
 
     let mut coverage = parser.read_from_file(&options.input_file)?;
     fixer.fix(&mut coverage)?;
