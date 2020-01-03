@@ -49,7 +49,7 @@ fn closing_brackets() {
         vec![],
     )]);
 
-    let fixer = CoverageFixer::new().unwrap();
+    let fixer = CoverageFixer::new();
     fixer.fix(&mut coverage).unwrap();
 
     assert_eq!(
@@ -82,7 +82,7 @@ fn tests_mod() {
         vec![],
     )]);
 
-    let fixer = CoverageFixer::new().unwrap();
+    let fixer = CoverageFixer::new();
     fixer.fix(&mut coverage).unwrap();
 
     assert_eq!(

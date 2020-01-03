@@ -284,3 +284,11 @@ impl DeriveRule {
     }
 }
 */
+
+pub fn default_rules() -> Vec<Box<dyn Rule>> {
+    vec![
+        Box::new(CloseBlockRule::new()),
+        Box::new(TestRule::new()),
+        Box::new(LoopRule::new()),
+    ]
+}
