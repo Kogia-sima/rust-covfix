@@ -18,6 +18,13 @@ impl CoverageFixer {
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
         for mut file_cov in &mut data.file_coverages {
+            file_cov
+                .line_coverages
+                .sort_unstable_by_key(|v| v.line_number);
+            file_cov
+                .branch_coverages
+                .sort_unstable_by_key(|v| v.line_number);
+
             let path = file_cov.path();
             let source = fs::read_to_string(path)
                 .chain_err(|| format!("Failed to open source file: {:?}", path))?;
