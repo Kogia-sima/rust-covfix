@@ -330,30 +330,6 @@ impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
             })
         }
     }
-
-    #[cfg_attr(not(feature = "noinline"), inline)]
-    fn nth(&mut self, idx: usize) -> Option<Self::Item> {
-        self.line_number += idx;
-        self.next()
-    }
-
-    #[cfg_attr(not(feature = "noinline"), inline)]
-    fn count(self) -> usize {
-        self.len()
-    }
-
-    #[cfg_attr(not(feature = "noinline"), inline)]
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let exact = self.len();
-        (exact, Some(exact))
-    }
-}
-
-impl ExactSizeIterator for PerLineIterator<'_, '_> {
-    #[cfg_attr(not(feature = "noinline"), inline)]
-    fn len(&self) -> usize {
-        self.lines.len() - self.line_number
-    }
 }
 
 fn trim_comments(s: &str) -> &str {
