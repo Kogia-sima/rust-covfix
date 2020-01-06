@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::marker::PhantomData;
 
+use crate::error::*;
 use crate::{BranchCoverage, FileCoverage, LineCoverage};
 
 pub trait Rule {
@@ -244,6 +245,23 @@ pub fn default_rules() -> Vec<Box<dyn Rule>> {
         Box::new(LoopRule::new()),
         Box::new(DeriveRule::new()),
     ]
+}
+
+pub fn from_str(s: &str) -> Result<Box<dyn Rule>, Error> {
+    if s == "close" {
+        return Ok(Box::new(CloseBlockRule::new()));
+    }
+    if s == "test" {
+        return Ok(Box::new(TestRule::new()));
+    }
+    if s == "loop" {
+        return Ok(Box::new(LoopRule::new()));
+    }
+    if s == "derive" {
+        return Ok(Box::new(DeriveRule::new()));
+    }
+
+    Err(ErrorKind::InvalidRuleName(s.to_owned()).into())
 }
 
 // ---------- Utilities ----------

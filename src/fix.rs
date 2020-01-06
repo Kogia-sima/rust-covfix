@@ -15,6 +15,12 @@ impl CoverageFixer {
         }
     }
 
+    pub fn with_rules<I: Into<Vec<Box<dyn Rule>>>>(rules: I) -> Self {
+        Self {
+            rules: rules.into(),
+        }
+    }
+
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
         for mut file_cov in &mut data.file_coverages {
