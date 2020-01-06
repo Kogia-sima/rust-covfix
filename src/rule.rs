@@ -246,7 +246,9 @@ impl Rule for LoopRule {
                 continue;
             }
 
-            if self.loop_reg.is_match(entry.line) {
+            let should_be_fixed = entry.line_cov.map_or(false, |v| v.count > 0);
+
+            if should_be_fixed && self.loop_reg.is_match(entry.line) {
                 for branch_cov in entry.branch_covs {
                     if !branch_cov.taken {
                         branch_cov.line_number = Some(std::usize::MAX);
