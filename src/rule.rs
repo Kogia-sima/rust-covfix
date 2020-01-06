@@ -191,13 +191,12 @@ impl Rule for DeriveRule {
                 ignore_coverages(&mut entry);
 
                 let line = trim_comments(entry.line);
-
                 if line.trim_start().bytes().next() == Some(b'#') {
                     // ignore cfg
                     continue;
                 }
 
-                if line.bytes().find(|&v| v == b'}').is_none() {
+                if line.bytes().find(|&v| v == b'}').is_some() {
                     inside_derive = false;
                 }
             } else if cfg_found {
@@ -216,13 +215,25 @@ impl Rule for DeriveRule {
                             cfg_found = false;
                         }
                     }
+
+                    if cfg_found {
+                        ignore_coverages(&mut entry);
+                    }
                 }
             } else {
                 if self.cfg_reg.is_match(entry.line) {
+                    ignore_coverages(&mut entry);
                     cfg_found = true;
                 }
             }
         }
+
+        file_cov
+            .line_coverages
+            .retain(|v| v.line_number != std::usize::MAX);
+        file_cov
+            .branch_coverages
+            .retain(|v| v.line_number != Some(std::usize::MAX));
     }
 }
 
