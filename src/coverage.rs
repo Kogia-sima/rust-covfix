@@ -162,8 +162,7 @@ pub trait CoverageWriter {
     fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error>;
 
     fn write_to_file(&self, data: &PackageCoverage, path: &Path) -> Result<(), Error> {
-        let f = fs::File::create(path)
-            .chain_err(|| format!("Failed to save coverage into file {:?}", path))?;
+        let f = fs::File::create(path).chain_err(|| format!("Failed to open file {:?}", path))?;
         let mut writer = BufWriter::new(f);
         self.write(&data, &mut writer)
     }

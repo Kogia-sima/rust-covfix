@@ -20,13 +20,14 @@ fn run() -> Result<(), Error> {
     let options = Arguments::parse()?;
     let root_dir = options
         .root
+        .clone()
         .or_else(find_root_dir)
         .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
 
     let parser = LcovParser::new(root_dir);
 
     let fixer = match options.rules {
-        Some(rule_str) => {
+        Some(ref rule_str) => {
             let mut rules = vec![];
             for segment in rule_str.split(',') {
                 rules.push(rule::from_str(segment)?);
@@ -36,11 +37,17 @@ fn run() -> Result<(), Error> {
         None => CoverageFixer::new(),
     };
 
-    let mut coverage = parser.read_from_file(&options.input_file)?;
-    fixer.fix(&mut coverage)?;
+    let mut coverage = parser
+        .read_from_file(&options.input_file)
+        .chain_err(|| format!("Failed to read coverage from {:?}", options.input_file))?;
+    fixer
+        .fix(&mut coverage)
+        .chain_err(|| "Failed to fix coverage")?;
 
     if let Some(file) = options.output_file {
-        parser.write_to_file(&coverage, &file)?;
+        parser
+            .write_to_file(&coverage, &file)
+            .chain_err(|| format!("Failed to save coverage into file {:?}", file))?;
     } else {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
@@ -95,7 +102,7 @@ impl Arguments {
         ap.parse_args_or_exit();
         drop(ap);
 
-        args.validate()?;
+        args.validate().chain_err(|| "Argument validation failed")?;
         Ok(args)
     }
 
