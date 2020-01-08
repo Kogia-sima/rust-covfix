@@ -35,17 +35,17 @@ fn simple() {
             ],
             vec![
                 BranchCoverage {
-                    line_number: Some(3),
+                    line_number: 3,
                     block_number: Some(0),
                     taken: Some(true),
                 },
                 BranchCoverage {
-                    line_number: Some(3),
+                    line_number: 3,
                     block_number: Some(0),
                     taken: Some(false),
                 },
                 BranchCoverage {
-                    line_number: Some(3),
+                    line_number: 3,
                     block_number: Some(0),
                     taken: Some(true),
                 },

@@ -37,27 +37,27 @@ fn test() {
                 ],
                 vec![
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
                         taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
                         taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
                         taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: Some(7),
+                        line_number: 7,
                         block_number: Some(0),
                         taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: Some(7),
+                        line_number: 7,
                         block_number: Some(0),
                         taken: Some(false),
                     },

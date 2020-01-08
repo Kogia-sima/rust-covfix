@@ -297,13 +297,12 @@ impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
             };
 
             // branch coverages at current line
-            let branch_covs = if self.bp < self.bp_end
-                && (*self.bp).line_number.unwrap() == self.line_number
+            let branch_covs = if self.bp < self.bp_end && (*self.bp).line_number == self.line_number
             {
                 let start = self.bp;
                 self.bp = self.bp.add(1);
                 let mut count = 1;
-                while self.bp < self.bp_end && (*self.bp).line_number.unwrap() == self.line_number {
+                while self.bp < self.bp_end && (*self.bp).line_number == self.line_number {
                     self.bp = self.bp.add(1);
                     count += 1;
                 }

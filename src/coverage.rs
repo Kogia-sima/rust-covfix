@@ -12,7 +12,7 @@ pub struct LineCoverage {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchCoverage {
-    pub line_number: Option<usize>,
+    pub line_number: usize,
     pub block_number: Option<usize>,
     pub taken: Option<bool>,
 }

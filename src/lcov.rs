@@ -92,7 +92,7 @@ impl CoverageReader for LcovParser {
                 RawData::BRDA(line, block, _, taken) => {
                     if line > 0 {
                         branch_coverages.push(BranchCoverage {
-                            line_number: Some(line.saturating_sub(1)),
+                            line_number: line.saturating_sub(1),
                             block_number: Some(block),
                             taken: Some(taken),
                         });
@@ -211,7 +211,7 @@ impl LcovParser {
         let path = data.path().strip_prefix(&self.root).unwrap();
         writeln!(writer, "SF:{}", path.display())?;
 
-        let mut current_line = Some(0);
+        let mut current_line = 0;
         let mut count = 0;
         for cov in data.branch_coverages() {
             if cov.line_number == current_line {
@@ -245,17 +245,15 @@ impl LcovParser {
         data: &BranchCoverage,
         branch_number: usize,
     ) -> Result<(), Error> {
-        if let Some(line_number) = data.line_number {
-            if let Some(taken) = data.taken {
-                writeln!(
-                    writer,
-                    "BRDA:{},{},{},{}",
-                    line_number + 1,
-                    data.block_number.unwrap_or(0),
-                    branch_number,
-                    if taken { "1" } else { "-" }
-                )?;
-            }
+        if let Some(taken) = data.taken {
+            writeln!(
+                writer,
+                "BRDA:{},{},{},{}",
+                data.line_number + 1,
+                data.block_number.unwrap_or(0),
+                branch_number,
+                if taken { "1" } else { "-" }
+            )?;
         }
 
         Ok(())
