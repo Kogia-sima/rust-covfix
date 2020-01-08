@@ -8,7 +8,7 @@ repository = "https://github.com/Kogia-sima/rust-covfix"
 readme = "README.md"
 license = "MIT"
 categories = ["command-line-utilities"]
-keywords = ["kcov", "coverage"]
+keywords = ["grcov", "lcov", "coverage"]
 edition = "2018"
 
 [[bin]]
