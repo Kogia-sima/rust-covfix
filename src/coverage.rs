@@ -64,10 +64,12 @@ pub struct PackageCoverage {
 }
 
 impl PackageCoverage {
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new(file_coverages: Vec<FileCoverage>) -> Self {
         Self::with_test_name("", file_coverages)
     }
 
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn with_test_name<T: Into<String>>(name: T, file_coverages: Vec<FileCoverage>) -> Self {
         Self {
             name: name.into(),
@@ -75,10 +77,12 @@ impl PackageCoverage {
         }
     }
 
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn name(&self) -> &str {
         &self.name
     }
 
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn file_coverages(&self) -> &[FileCoverage] {
         &self.file_coverages
     }

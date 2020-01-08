@@ -9,12 +9,14 @@ pub struct CoverageFixer {
 }
 
 impl CoverageFixer {
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new() -> Self {
         Self {
             rules: default_rules(),
         }
     }
 
+    #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn with_rules<I: Into<Vec<Box<dyn Rule>>>>(rules: I) -> Self {
         Self {
             rules: rules.into(),
