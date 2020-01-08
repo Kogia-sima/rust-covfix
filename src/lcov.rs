@@ -85,7 +85,7 @@ impl CoverageReader for LcovParser {
                     if line > 0 {
                         line_coverages.push(LineCoverage {
                             line_number: line - 1,
-                            count,
+                            count: Some(count),
                         });
                     }
                 }
@@ -94,7 +94,7 @@ impl CoverageReader for LcovParser {
                         branch_coverages.push(BranchCoverage {
                             line_number: Some(line.saturating_sub(1)),
                             block_number: Some(block),
-                            taken,
+                            taken: Some(taken),
                         });
                     }
                 }
@@ -246,14 +246,16 @@ impl LcovParser {
         branch_number: usize,
     ) -> Result<(), Error> {
         if let Some(line_number) = data.line_number {
-            writeln!(
-                writer,
-                "BRDA:{},{},{},{}",
-                line_number + 1,
-                data.block_number.unwrap_or(0),
-                branch_number,
-                if data.taken { "1" } else { "-" }
-            )?;
+            if let Some(taken) = data.taken {
+                writeln!(
+                    writer,
+                    "BRDA:{},{},{},{}",
+                    line_number + 1,
+                    data.block_number.unwrap_or(0),
+                    branch_number,
+                    if taken { "1" } else { "-" }
+                )?;
+            }
         }
 
         Ok(())
@@ -264,7 +266,9 @@ impl LcovParser {
         writer: &mut W,
         data: &LineCoverage,
     ) -> Result<(), Error> {
-        writeln!(writer, "DA:{},{}", data.line_number + 1, data.count)?;
+        if let Some(count) = data.count {
+            writeln!(writer, "DA:{},{}", data.line_number + 1, count)?;
+        }
 
         Ok(())
     }

@@ -9,7 +9,7 @@ macro_rules! line_coveages {
     ($($line:expr => $count:expr,)*) => {
         vec![
             $(
-                LineCoverage { line_number: $line, count: $count },
+                LineCoverage { line_number: $line, count: Some($count) },
             )*
         ]
     }

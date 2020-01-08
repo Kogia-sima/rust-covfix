@@ -33,22 +33,12 @@ impl Rule for CloseBlockRule {
 
             if self.reg.is_match(entry.line) {
                 if let Some(line_cov) = entry.line_cov {
-                    line_cov.line_number = std::usize::MAX;
+                    line_cov.count = None;
                 }
 
-                entry
-                    .branch_covs
-                    .iter_mut()
-                    .for_each(|v| v.line_number = Some(std::usize::MAX));
+                entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
             }
         }
-
-        file_cov
-            .line_coverages
-            .retain(|v| v.line_number != std::usize::MAX);
-        file_cov
-            .branch_coverages
-            .retain(|v| v.line_number != Some(std::usize::MAX));
     }
 }
 
@@ -74,13 +64,10 @@ impl Rule for TestRule {
     fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         fn ignore_coverages(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
-                line_cov.line_number = std::usize::MAX;
+                line_cov.count = None;
             }
 
-            entry
-                .branch_covs
-                .iter_mut()
-                .for_each(|v| v.line_number = Some(std::usize::MAX));
+            entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
         }
 
         let mut cfg_found = false;
@@ -112,13 +99,6 @@ impl Rule for TestRule {
                 }
             }
         }
-
-        file_cov
-            .line_coverages
-            .retain(|v| v.line_number != std::usize::MAX);
-        file_cov
-            .branch_coverages
-            .retain(|v| v.line_number != Some(std::usize::MAX));
     }
 }
 
@@ -142,21 +122,19 @@ impl Rule for LoopRule {
                 continue;
             }
 
-            let should_be_fixed = entry.line_cov.map_or(false, |v| v.count > 0);
+            let should_be_fixed = entry
+                .line_cov
+                .map_or(false, |v| v.count.map_or(false, |c| c > 0));
 
             if should_be_fixed && self.loop_reg.is_match(entry.line) {
                 for branch_cov in entry.branch_covs {
-                    if !branch_cov.taken {
-                        branch_cov.line_number = Some(std::usize::MAX);
+                    if !branch_cov.taken.unwrap_or(false) {
+                        branch_cov.taken = None;
                         break;
                     }
                 }
             }
         }
-
-        file_cov
-            .branch_coverages
-            .retain(|v| v.line_number != Some(std::usize::MAX));
     }
 }
 
@@ -179,13 +157,10 @@ impl Rule for DeriveRule {
     fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         fn ignore_coverages(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
-                line_cov.line_number = std::usize::MAX;
+                line_cov.count = None;
             }
 
-            entry
-                .branch_covs
-                .iter_mut()
-                .for_each(|v| v.line_number = Some(std::usize::MAX));
+            entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
         }
 
         let mut cfg_found = false;
@@ -232,13 +207,6 @@ impl Rule for DeriveRule {
                 }
             }
         }
-
-        file_cov
-            .line_coverages
-            .retain(|v| v.line_number != std::usize::MAX);
-        file_cov
-            .branch_coverages
-            .retain(|v| v.line_number != Some(std::usize::MAX));
     }
 }
 

@@ -18,36 +18,36 @@ fn simple() {
             vec![
                 LineCoverage {
                     line_number: 2,
-                    count: 1,
+                    count: Some(1),
                 },
                 LineCoverage {
                     line_number: 3,
-                    count: 6,
+                    count: Some(6),
                 },
                 LineCoverage {
                     line_number: 4,
-                    count: 5,
+                    count: Some(5),
                 },
                 LineCoverage {
                     line_number: 6,
-                    count: 1,
+                    count: Some(1),
                 },
             ],
             vec![
                 BranchCoverage {
                     line_number: Some(3),
                     block_number: Some(0),
-                    taken: true,
+                    taken: Some(true),
                 },
                 BranchCoverage {
                     line_number: Some(3),
                     block_number: Some(0),
-                    taken: false,
+                    taken: Some(false),
                 },
                 BranchCoverage {
                     line_number: Some(3),
                     block_number: Some(0),
-                    taken: true,
+                    taken: Some(true),
                 },
             ],
         ),
@@ -56,15 +56,15 @@ fn simple() {
             vec![
                 LineCoverage {
                     line_number: 0,
-                    count: 5,
+                    count: Some(5),
                 },
                 LineCoverage {
                     line_number: 1,
-                    count: 5,
+                    count: Some(5),
                 },
                 LineCoverage {
                     line_number: 2,
-                    count: 5,
+                    count: Some(5),
                 },
             ],
             vec![],

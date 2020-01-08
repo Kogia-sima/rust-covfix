@@ -40,6 +40,9 @@ impl CoverageFixer {
             for rule in &self.rules {
                 rule.fix_file_coverage(&source, &mut file_cov);
             }
+
+            file_cov.line_coverages.retain(|v| v.count.is_some());
+            file_cov.branch_coverages.retain(|v| v.taken.is_some());
         }
 
         Ok(())
