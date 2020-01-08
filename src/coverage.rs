@@ -4,19 +4,31 @@ use std::path::{Path, PathBuf};
 
 use crate::error::*;
 
+/// Coverage information for a single line
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineCoverage {
+    /// line number
     pub line_number: usize,
+    /// execution count of line. `None` means this line is not executable.
+    /// `None` value is used when the fixer detects non-executable line.
     pub count: Option<u32>,
 }
 
+/// Coverage information for a single branch
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchCoverage {
+    /// line number
     pub line_number: usize,
+    /// block id which contains this branch
     pub block_number: Option<usize>,
+    /// whether this branch was executed.
+    /// `None` value is used when the fixer detects non-executable branch.
     pub taken: Option<bool>,
 }
 
+/// Coverage information for a single file
+///
+/// `FileCoverage` holds coverage information for lines and branches in the source file.
 #[derive(Debug, PartialEq)]
 pub struct FileCoverage {
     path: PathBuf,
@@ -56,6 +68,7 @@ impl FileCoverage {
     }
 }
 
+/// Coverage information for package
 #[derive(Debug, PartialEq)]
 pub struct PackageCoverage {
     name: String,
@@ -163,8 +176,10 @@ impl TotalCoverage for PackageCoverage {
 }
 
 pub trait CoverageReader {
+    /// fetch the coverage information from the reader
     fn read<R: BufRead>(&self, reader: &mut R) -> Result<PackageCoverage, Error>;
 
+    /// fetch the coverage information from file
     fn read_from_file(&self, path: &Path) -> Result<PackageCoverage, Error> {
         let f = fs::File::open(path)
             .chain_err(|| format!("Failed to open coverage file {:?}", path))?;
@@ -175,8 +190,10 @@ pub trait CoverageReader {
 }
 
 pub trait CoverageWriter {
+    /// save coverage information into the writer
     fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error>;
 
+    /// save coverage information into the file
     fn write_to_file(&self, data: &PackageCoverage, path: &Path) -> Result<(), Error> {
         let f = fs::File::create(path).chain_err(|| format!("Failed to open file {:?}", path))?;
         let mut writer = BufWriter::new(f);

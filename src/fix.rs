@@ -4,6 +4,11 @@ use crate::coverage::PackageCoverage;
 use crate::error::*;
 use crate::rule::{default_rules, Rule};
 
+/// Fix coverage information based on source code
+///
+/// You MUST fix coverage information using this struct because
+/// Rules require coverage informations to be stored in correct format.
+/// This struct checks the information format and modify it if it is invalid.
 pub struct CoverageFixer {
     rules: Vec<Box<dyn Rule>>,
 }
