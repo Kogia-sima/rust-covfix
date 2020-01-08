@@ -90,11 +90,13 @@ impl CoverageReader for LcovParser {
                     }
                 }
                 RawData::BRDA(line, block, _, taken) => {
-                    branch_coverages.push(BranchCoverage {
-                        line_number: Some(line.saturating_sub(1)),
-                        block_number: Some(block),
-                        taken,
-                    });
+                    if line > 0 {
+                        branch_coverages.push(BranchCoverage {
+                            line_number: Some(line.saturating_sub(1)),
+                            block_number: Some(block),
+                            taken,
+                        });
+                    }
                 }
                 RawData::EndOfRecord => {
                     let filepath = self.root.join(&filename);
