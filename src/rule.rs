@@ -210,6 +210,93 @@ impl Rule for DeriveRule {
     }
 }
 
+pub struct CommentRule;
+
+impl CommentRule {
+    #[cfg_attr(not(feature = "noinline"), inline)]
+    fn new() -> Self {
+        Self
+    }
+}
+
+impl Rule for CommentRule {
+    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+        fn ignore_line(entry: &mut CoverageEntry) {
+            if let Some(&mut ref mut line_cov) = entry.line_cov {
+                line_cov.count = None;
+            }
+        }
+
+        fn ignore_branch(entry: &mut CoverageEntry) {
+            entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
+        }
+
+        fn ignore_both(entry: &mut CoverageEntry) {
+            ignore_line(entry);
+            ignore_branch(entry);
+        }
+
+        let mut inside_ignore_line = false;
+        let mut inside_ignore_branch = false;
+        let mut inside_ignore_both = false;
+
+        for mut entry in PerLineIterator::new(source, file_cov) {
+            use CommentMarker::*;
+
+            let marker = extract_marker(entry.line);
+
+            if inside_ignore_line {
+                ignore_line(&mut entry);
+
+                if marker == Some(EndIgnoreLine) {
+                    inside_ignore_line = false;
+                }
+
+                continue;
+            }
+
+            if inside_ignore_branch {
+                ignore_branch(&mut entry);
+
+                if marker == Some(EndIgnoreBranch) {
+                    inside_ignore_branch = false;
+                }
+
+                continue;
+            }
+
+            if inside_ignore_both {
+                ignore_both(&mut entry);
+
+                if marker == Some(EndIgnoreBoth) {
+                    inside_ignore_both = false;
+                }
+
+                continue;
+            }
+
+            match marker {
+                Some(IgnoreLine) => ignore_line(&mut entry),
+                Some(IgnoreBranch) => ignore_branch(&mut entry),
+                Some(IgnoreBoth) => ignore_both(&mut entry),
+                Some(BeginIgnoreLine) => {
+                    ignore_line(&mut entry);
+                    inside_ignore_line = true;
+                }
+                Some(BeginIgnoreBranch) => {
+                    ignore_branch(&mut entry);
+                    inside_ignore_branch = true;
+                }
+                Some(BeginIgnoreBoth) => {
+                    ignore_both(&mut entry);
+                    inside_ignore_both = true;
+                }
+                _ => {}
+            }
+        }
+    }
+}
+
 #[cfg_attr(not(feature = "noinline"), inline)]
 pub fn default_rules() -> Vec<Box<dyn Rule>> {
     vec![
@@ -217,6 +304,7 @@ pub fn default_rules() -> Vec<Box<dyn Rule>> {
         Box::new(TestRule::new()),
         Box::new(LoopRule::new()),
         Box::new(DeriveRule::new()),
+        Box::new(CommentRule::new()),
     ]
 }
 
@@ -232,6 +320,9 @@ pub fn from_str(s: &str) -> Result<Box<dyn Rule>, Error> {
     }
     if s == "derive" {
         return Ok(Box::new(DeriveRule::new()));
+    }
+    if s == "comment" {
+        return Ok(Box::new(CommentRule::new()));
     }
 
     Err(ErrorKind::InvalidRuleName(s.to_owned()).into())
@@ -345,6 +436,86 @@ fn trim_comments(s: &str) -> &str {
     s
 }
 
+#[derive(Debug, PartialEq)]
+enum CommentMarker {
+    IgnoreLine,
+    IgnoreBranch,
+    IgnoreBoth,
+    BeginIgnoreLine,
+    BeginIgnoreBranch,
+    BeginIgnoreBoth,
+    EndIgnoreLine,
+    EndIgnoreBranch,
+    EndIgnoreBoth,
+}
+
+fn extract_marker<'a>(line: &'a str) -> Option<CommentMarker> {
+    fn is_character(byte: u8) -> bool {
+        (0x41 <= byte && byte <= 0x5a)
+            || (0x61 <= byte && byte <= 0x7a)
+            || byte == b'_'
+            || byte == b'-'
+    }
+
+    let bytes = line.as_bytes();
+    let imax = bytes.len().saturating_sub(9);
+
+    for i in 0..imax {
+        unsafe {
+            if !bytes.get_unchecked(i..).starts_with(b"cov:") {
+                continue;
+            }
+
+            if i != 0 && !b" \t".contains(bytes.get_unchecked(i - 1)) {
+                continue;
+            }
+
+            let mut pos = i + 4;
+            while pos < bytes.len() && b" \t".contains(bytes.get_unchecked(pos)) {
+                pos += 1;
+            }
+
+            let mut end_pos = pos + 1;
+            while end_pos < bytes.len() && is_character(*bytes.get_unchecked(end_pos)) {
+                end_pos += 1;
+            }
+
+            let key = std::str::from_utf8_unchecked(bytes.get_unchecked(pos..end_pos));
+
+            return parse_marker(key);
+        }
+    }
+
+    None
+}
+
+fn parse_marker(key: &str) -> Option<CommentMarker> {
+    use CommentMarker::*;
+
+    let mut splits = key.split(|v| v == '-' || v == '_');
+    let mut segments = [""; 3];
+
+    segments[0] = splits.next().unwrap_or("");
+    segments[1] = splits.next().unwrap_or("");
+    segments[2] = splits.next().unwrap_or("");
+
+    match segments {
+        ["ignore", "line", ""] => Some(IgnoreLine),
+        ["ignore", "branch", ""] => Some(IgnoreBranch),
+        ["ignore", "", ""] => Some(IgnoreBoth),
+        ["begin", "ignore", "line"] => Some(BeginIgnoreLine),
+        ["begin", "ignore", "branch"] => Some(BeginIgnoreBranch),
+        ["begin", "ignore", ""] => Some(BeginIgnoreBoth),
+        ["end", "ignore", "line"] => Some(EndIgnoreLine),
+        ["end", "ignore", "branch"] => Some(EndIgnoreBranch),
+        ["end", "ignore", ""] => Some(EndIgnoreBoth),
+        _ => {
+            eprintln!("Warning: Invalid marker detected: {:?}", key);
+            None
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #[test]
@@ -357,5 +528,62 @@ mod tests {
         assert_eq!(super::trim_comments("1 // 2"), "1 ");
         assert_eq!(super::trim_comments("1 // 2 // 3"), "1 ");
         assert_eq!(super::trim_comments("1 + 2 // comment"), "1 + 2 ");
+    }
+
+    #[test]
+    fn extract_marker() {
+        use super::CommentMarker::*;
+        assert_eq!(super::extract_marker("ccov:ignore"), None);
+        assert_eq!(super::extract_marker("cov:ignore-linee"), None);
+        assert_eq!(super::extract_marker("cov:ignore--branch"), None);
+        assert_eq!(super::extract_marker("cov:ignore"), Some(IgnoreBoth));
+        assert_eq!(
+            super::extract_marker("//\tcov:ignore-line"),
+            Some(IgnoreLine)
+        );
+        assert_eq!(
+            super::extract_marker("// cov:ignore_branch"),
+            Some(IgnoreBranch)
+        );
+        assert_eq!(
+            super::extract_marker("cov:ignore-branch"),
+            Some(IgnoreBranch)
+        );
+        assert_eq!(
+            super::extract_marker("cov:begin-ignore"),
+            Some(BeginIgnoreBoth)
+        );
+        assert_eq!(
+            super::extract_marker("cov: begin-ignore-line"),
+            Some(BeginIgnoreLine)
+        );
+        assert_eq!(
+            super::extract_marker("cov: \tbegin-ignore-branch"),
+            Some(BeginIgnoreBranch)
+        );
+        assert_eq!(
+            super::extract_marker("cov:\t end_ignore-line"),
+            Some(EndIgnoreLine)
+        );
+        assert_eq!(
+            super::extract_marker("cov:end-ignore_branch\t"),
+            Some(EndIgnoreBranch)
+        );
+        assert_eq!(
+            super::extract_marker("cov:end-ignore "),
+            Some(EndIgnoreBoth)
+        );
+    }
+
+    #[test]
+    fn from_str() {
+        assert!(super::from_str("close").is_ok());
+        assert!(super::from_str("test").is_ok());
+        assert!(super::from_str("loop").is_ok());
+        assert!(super::from_str("derive").is_ok());
+        assert!(super::from_str("comment").is_ok());
+        assert!(super::from_str("").is_err());
+        assert!(super::from_str("derives").is_err());
+        assert!(super::from_str("forloop").is_err());
     }
 }
