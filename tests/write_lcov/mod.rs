@@ -16,50 +16,50 @@ fn test() {
                 vec![
                     LineCoverage {
                         line_number: 1,
-                        count: 2,
+                        count: Some(2),
                     },
                     LineCoverage {
                         line_number: 2,
-                        count: 2,
+                        count: Some(2),
                     },
                     LineCoverage {
                         line_number: 7,
-                        count: 1,
+                        count: Some(1),
                     },
                     LineCoverage {
                         line_number: 8,
-                        count: 4,
+                        count: Some(4),
                     },
                     LineCoverage {
                         line_number: 9,
-                        count: 1,
+                        count: Some(1),
                     },
                 ],
                 vec![
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
-                        taken: false,
+                        taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
-                        taken: false,
+                        taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: Some(2),
+                        line_number: 2,
                         block_number: Some(0),
-                        taken: true,
+                        taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: Some(7),
+                        line_number: 7,
                         block_number: Some(0),
-                        taken: true,
+                        taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: Some(7),
+                        line_number: 7,
                         block_number: Some(0),
-                        taken: false,
+                        taken: Some(false),
                     },
                 ],
             ),
@@ -68,23 +68,23 @@ fn test() {
                 vec![
                     LineCoverage {
                         line_number: 0,
-                        count: 1,
+                        count: Some(1),
                     },
                     LineCoverage {
                         line_number: 1,
-                        count: 2,
+                        count: Some(2),
                     },
                     LineCoverage {
                         line_number: 2,
-                        count: 3,
+                        count: Some(3),
                     },
                     LineCoverage {
                         line_number: 8,
-                        count: 0,
+                        count: Some(0),
                     },
                     LineCoverage {
                         line_number: 9999,
-                        count: 3,
+                        count: Some(3),
                     },
                 ],
                 vec![],

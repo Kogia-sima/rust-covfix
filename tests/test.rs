@@ -3,6 +3,15 @@ use std::io;
 use std::path::Path;
 use tempfile::TempDir;
 
+macro_rules! assert_matches {
+    ($expression:expr, $($pattern:tt)+) => {
+        match $expression {
+            $($pattern)+ => (),
+            ref e => panic!("assertion failed: `{:?}` does not match `{}`", e, stringify!($($pattern)+)),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct WorkSpace {
     dir: TempDir,
@@ -16,9 +25,7 @@ impl WorkSpace {
     }
 
     pub fn from_template<P: AsRef<Path>>(template_dir: P) -> Self {
-        let obj = Self {
-            dir: TempDir::new().unwrap(),
-        };
+        let obj = Self::new();
         copy_dir_contents(template_dir.as_ref(), &obj.path());
         obj
     }
@@ -58,5 +65,6 @@ fn copy_dir_contents(p1: &Path, p2: &Path) {
 // test modules
 mod fix;
 mod guess_game;
+mod invalid_operations;
 mod read_lcov;
 mod write_lcov;

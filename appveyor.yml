@@ -1,6 +1,10 @@
 platform:
   - x64
 
+branches:
+  except:
+    - stable
+
 environment:
   matrix:
     - RUST_VERSION: stable

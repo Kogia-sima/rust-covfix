@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::process;
 
 use rust_covfix::error::*;
+use rust_covfix::rule;
 use rust_covfix::{parser::LcovParser, CoverageFixer, CoverageReader, CoverageWriter};
 
 fn main() {
@@ -19,17 +20,34 @@ fn run() -> Result<(), Error> {
     let options = Arguments::parse()?;
     let root_dir = options
         .root
+        .clone()
         .or_else(find_root_dir)
         .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
 
     let parser = LcovParser::new(root_dir);
-    let fixer = CoverageFixer::new().chain_err(|| "Failed to initialize fixer")?;
 
-    let mut coverage = parser.read_from_file(&options.input_file)?;
-    fixer.fix(&mut coverage)?;
+    let fixer = match options.rules {
+        Some(ref rule_str) => {
+            let mut rules = vec![];
+            for segment in rule_str.split(',') {
+                rules.push(rule::from_str(segment)?);
+            }
+            CoverageFixer::with_rules(rules)
+        }
+        None => CoverageFixer::new(),
+    };
+
+    let mut coverage = parser
+        .read_from_file(&options.input_file)
+        .chain_err(|| format!("Failed to read coverage from {:?}", options.input_file))?;
+    fixer
+        .fix(&mut coverage)
+        .chain_err(|| "Failed to fix coverage")?;
 
     if let Some(file) = options.output_file {
-        parser.write_to_file(&coverage, &file)?;
+        parser
+            .write_to_file(&coverage, &file)
+            .chain_err(|| format!("Failed to save coverage into file {:?}", file))?;
     } else {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
@@ -43,6 +61,7 @@ struct Arguments {
     input_file: PathBuf,
     output_file: Option<PathBuf>,
     root: Option<PathBuf>,
+    rules: Option<String>,
 }
 
 impl Arguments {
@@ -51,6 +70,7 @@ impl Arguments {
             root: None,
             input_file: PathBuf::new(),
             output_file: None,
+            rules: None,
         };
 
         let mut ap = ArgumentParser::new();
@@ -73,11 +93,16 @@ impl Arguments {
             StoreOption,
             "project root directory",
         );
+        ap.refer(&mut args.rules).metavar("STR,[STR..]").add_option(
+            &["--rules"],
+            StoreOption,
+            "use specified rules to fix coverages. Valid names are [close, test, loop, derive]",
+        );
 
         ap.parse_args_or_exit();
         drop(ap);
 
-        args.validate()?;
+        args.validate().chain_err(|| "Argument validation failed")?;
         Ok(args)
     }
 

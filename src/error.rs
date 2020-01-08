@@ -22,5 +22,9 @@ error_chain! {
             description("Source file not found"),
             display("Source file {:?} not found", p)
         }
+        InvalidRuleName(name: String) {
+            description("Invalid Rule name"),
+            display("Invalid Rule name: {:?}", name)
+        }
     }
 }
