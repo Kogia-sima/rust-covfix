@@ -110,9 +110,6 @@ impl CoverageReader for LcovParser {
                         branch_coverages.drain(..).collect(),
                     );
                     file_coverages.push(file_coverage);
-
-                    debug_assert!(line_coverages.is_empty());
-                    debug_assert!(branch_coverages.is_empty());
                 }
                 _ => {}
             }
