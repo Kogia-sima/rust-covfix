@@ -48,11 +48,13 @@ $ cargo install rust-covfix
 
 ## How is the incorrect line coverage detected
 
-`rust-covfix` will fix the coverage information based on source code and some rules (descrived below).
+`rust_covfix` fixes the coverage information using some rules. You can pass `--rules` option to specify which rules are used to fix coverages.
 
 ### Rules
 
-#### 1. Line that contain only closing braces or only `else` statements is not executable
+#### close
+
+closing brackets, line of `else` block will be ignored.
 
 ```rust
 if a > 0 {
@@ -62,7 +64,9 @@ if a > 0 {
 };  // <-- marked as "not executable"
 ```
 
-#### 2. Module with name 'tests' are ignored
+#### test
+
+module block named `test` or `tests` which has attribute `cfg(test)` will be ignored
 
 ```rust
 #[cfg(test)]
@@ -72,6 +76,28 @@ mod tests {  // <-- removed from coverage
     #[test]
     fn test_hoge() { ... }  // <-- removed from coverage
 }
+```
+
+#### loop
+
+Fix rust internal bugs that loop branches are not correctly passed.
+
+```rust
+for i in 0..10 {  // <-- fix branch coverage information
+    println!("{}", i);
+}
+```
+
+#### derive
+
+structs with `derive(...)` attribute will be ignored
+
+```rust
+#[derive(Clone, Debug)]  // <-- removed from coverage
+struct Point {  // <-- removed from coverage
+  x: f64,  // <-- removed from coverage
+  y: f64  // <-- removed from coverage
+}  // <-- removed from coverage
 ```
 
 ## Roadmap
