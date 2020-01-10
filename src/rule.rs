@@ -117,6 +117,10 @@ impl LoopRule {
 
 impl Rule for LoopRule {
     fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+        if file_cov.branch_coverages.is_empty() {
+            return;
+        }
+
         for entry in PerLineIterator::new(source, file_cov) {
             if entry.branch_covs.is_empty() {
                 continue;
