@@ -87,6 +87,12 @@ impl CoverageFixer {
     }
 }
 
+impl Default for CoverageFixer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 struct CoverageSummary {
     line_executed: usize,
     line_total: usize,

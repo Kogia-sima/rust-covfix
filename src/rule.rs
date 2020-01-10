@@ -183,7 +183,7 @@ impl Rule for DeriveRule {
                     continue;
                 }
 
-                if line.bytes().find(|&v| v == b'}').is_some() {
+                if line.bytes().any(|v| v == b'}') {
                     inside_derive = false;
                 }
             } else if cfg_found {
@@ -207,11 +207,9 @@ impl Rule for DeriveRule {
                         ignore_coverages(&mut entry);
                     }
                 }
-            } else {
-                if self.cfg_reg.is_match(entry.line) {
-                    ignore_coverages(&mut entry);
-                    cfg_found = true;
-                }
+            } else if self.cfg_reg.is_match(entry.line) {
+                ignore_coverages(&mut entry);
+                cfg_found = true;
             }
         }
     }
@@ -456,7 +454,7 @@ enum CommentMarker {
     EndIgnoreBoth,
 }
 
-fn extract_marker<'a>(line: &'a str) -> Option<CommentMarker> {
+fn extract_marker(line: &str) -> Option<CommentMarker> {
     fn is_character(byte: u8) -> bool {
         (0x41 <= byte && byte <= 0x5a)
             || (0x61 <= byte && byte <= 0x7a)
@@ -522,6 +520,24 @@ fn parse_marker(key: &str) -> Option<CommentMarker> {
         }
     }
 }
+
+macro_rules! impl_default {
+    ($name:ident) => {
+        impl Default for $name {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+    };
+}
+
+// cov:begin-ignore
+impl_default!(CloseBlockRule);
+impl_default!(TestRule);
+impl_default!(LoopRule);
+impl_default!(DeriveRule);
+impl_default!(CommentRule);
+// cov:end-ignore
 
 #[cfg(test)]
 mod tests {
