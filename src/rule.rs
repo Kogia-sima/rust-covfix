@@ -514,7 +514,7 @@ fn parse_marker(key: &str) -> Option<CommentMarker> {
         ["end", "ignore", "branch"] => Some(EndIgnoreBranch),
         ["end", "ignore", ""] => Some(EndIgnoreBoth),
         _ => {
-            eprintln!("Warning: Invalid marker detected: {:?}", key);
+            warnln!("Warning: Invalid marker detected: {:?}", key);
             None
         }
     }
