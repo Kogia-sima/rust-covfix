@@ -12,6 +12,10 @@
 //! `CoverageReader`/`CoverageWriter` trait. If you want to define a new rule to
 //! fix the coverage, implement `Rule` trait.
 
+#[macro_use]
+mod logger;
+pub use logger::*;
+
 mod coverage;
 pub use coverage::*;
 

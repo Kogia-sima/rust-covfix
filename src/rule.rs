@@ -118,6 +118,9 @@ impl LoopRule {
 impl Rule for LoopRule {
     fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
         if file_cov.branch_coverages.is_empty() {
+            debugln!(
+                "Skipping LoopRule because the file coverage does not contain any branch coverage."
+            );
             return;
         }
 
@@ -514,7 +517,7 @@ fn parse_marker(key: &str) -> Option<CommentMarker> {
         ["end", "ignore", "branch"] => Some(EndIgnoreBranch),
         ["end", "ignore", ""] => Some(EndIgnoreBoth),
         _ => {
-            eprintln!("Warning: Invalid marker detected: {:?}", key);
+            warnln!("Warning: Invalid marker detected: {:?}", key);
             None
         }
     }

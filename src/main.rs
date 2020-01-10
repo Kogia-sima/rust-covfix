@@ -1,4 +1,7 @@
-use argparse::{ArgumentParser, Print, Store, StoreOption};
+#[macro_use]
+extern crate rust_covfix;
+
+use argparse::{ArgumentParser, Print, Store, StoreOption, StoreTrue};
 use error_chain::{bail, ChainedError};
 use std::env;
 use std::io::BufWriter;
@@ -18,11 +21,20 @@ fn main() {
 
 fn run() -> Result<(), Error> {
     let options = Arguments::parse()?;
+
+    if options.verbose {
+        rust_covfix::set_verbosity(4);
+    } else {
+        rust_covfix::set_verbosity(3);
+    }
+
     let root_dir = options
         .root
         .clone()
         .or_else(find_root_dir)
         .ok_or("cannot find the project root directory. Did you run `cargo test` at first?")?;
+
+    debugln!("Project root directory: {:?}", root_dir);
 
     let parser = LcovParser::new(root_dir);
 
@@ -37,18 +49,25 @@ fn run() -> Result<(), Error> {
         None => CoverageFixer::new(),
     };
 
+    debugln!("Reading data file {:?}", options.input_file);
+
     let mut coverage = parser
         .read_from_file(&options.input_file)
         .chain_err(|| format!("Failed to read coverage from {:?}", options.input_file))?;
+
+    debugln!("Found {} entries", coverage.file_coverages().len());
+
     fixer
         .fix(&mut coverage)
         .chain_err(|| "Failed to fix coverage")?;
 
     if let Some(file) = options.output_file {
+        debugln!("Writing coverage to {:?}", file);
         parser
             .write_to_file(&coverage, &file)
             .chain_err(|| format!("Failed to save coverage into file {:?}", file))?;
     } else {
+        debugln!("Writing coverage to stdout");
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout.lock());
         parser.write(&coverage, &mut writer)?;
@@ -62,6 +81,7 @@ struct Arguments {
     output_file: Option<PathBuf>,
     root: Option<PathBuf>,
     rules: Option<String>,
+    verbose: bool,
 }
 
 impl Arguments {
@@ -71,6 +91,7 @@ impl Arguments {
             input_file: PathBuf::new(),
             output_file: None,
             rules: None,
+            verbose: false,
         };
 
         let mut ap = ArgumentParser::new();
@@ -83,6 +104,8 @@ impl Arguments {
             Print(env!("CARGO_PKG_VERSION").to_owned()),
             "display version",
         );
+        ap.refer(&mut args.verbose)
+            .add_option(&["-v", "--verbose"], StoreTrue, "verbose output");
         ap.refer(&mut args.output_file).metavar("FILE").add_option(
             &["-o", "--output"],
             StoreOption,
