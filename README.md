@@ -20,6 +20,7 @@ Though only `lcov` format is supprted at current, Another formats is going to be
 - Lightweight (small dependencies)
 - Fast and safe (implemented in Rust language)
 - `rust-covfix` is also available with Rust API ([Documentation](https://docs.rs/rust-covfix))
+- Show summary of coverage difference.
 
 ### Optional features
 
@@ -135,7 +136,6 @@ fn main() {
 
 - Support `cobertura.xml` file. (WIP)
 - Add option for uploading the correct coverages to coveralls.
-- Show summary of coverage difference.
 
 ## Author
 
