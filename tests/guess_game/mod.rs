@@ -1,7 +1,7 @@
 use super::WorkSpace;
 use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[test]
 fn test() {
@@ -19,11 +19,11 @@ fn test() {
     }
 
     let status = Command::new(exe)
-        .arg("--root")
-        .arg(ws.path())
+        .current_dir(ws.path().join("src"))
         .arg("-o")
         .arg(&lcov3)
         .arg(&lcov1)
+        .stderr(Stdio::null())
         .status()
         .unwrap();
 
