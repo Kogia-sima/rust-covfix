@@ -1,7 +1,7 @@
 use super::WorkSpace;
 use std::fs;
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 #[test]
 fn all_rules() {
@@ -97,6 +97,8 @@ fn verbose() {
         .current_dir(ws.path())
         .arg("-v")
         .arg(&lcov1)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .status()
         .unwrap();
 
