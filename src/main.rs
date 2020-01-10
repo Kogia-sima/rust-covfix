@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rust_covfix;
 
-use argparse::{ArgumentParser, Print, Store, StoreOption};
+use argparse::{ArgumentParser, Print, Store, StoreOption, StoreTrue};
 use error_chain::{bail, ChainedError};
 use std::env;
 use std::io::BufWriter;
@@ -21,7 +21,12 @@ fn main() {
 
 fn run() -> Result<(), Error> {
     let options = Arguments::parse()?;
-    rust_covfix::set_verbosity(3);
+
+    if options.verbose {
+        rust_covfix::set_verbosity(4);
+    } else {
+        rust_covfix::set_verbosity(3);
+    }
 
     let root_dir = options
         .root
@@ -76,6 +81,7 @@ struct Arguments {
     output_file: Option<PathBuf>,
     root: Option<PathBuf>,
     rules: Option<String>,
+    verbose: bool,
 }
 
 impl Arguments {
@@ -85,6 +91,7 @@ impl Arguments {
             input_file: PathBuf::new(),
             output_file: None,
             rules: None,
+            verbose: false,
         };
 
         let mut ap = ArgumentParser::new();
@@ -97,6 +104,8 @@ impl Arguments {
             Print(env!("CARGO_PKG_VERSION").to_owned()),
             "display version",
         );
+        ap.refer(&mut args.verbose)
+            .add_option(&["-v", "--verbose"], StoreTrue, "verbose output");
         ap.refer(&mut args.output_file).metavar("FILE").add_option(
             &["-o", "--output"],
             StoreOption,
