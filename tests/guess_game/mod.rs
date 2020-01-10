@@ -79,3 +79,27 @@ fn no_rule() {
 
     assert_eq!(content.trim(), expected_content.trim());
 }
+
+#[test]
+fn verbose() {
+    let ws = WorkSpace::from_template("tests/guess_game");
+
+    let lcov1 = ws.path().join("lcov.info");
+
+    let mut exe = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if cfg!(windows) {
+        exe.push("target\\debug\\rust-covfix");
+    } else {
+        exe.push("target/debug/rust-covfix");
+    }
+
+    let result = Command::new(exe)
+        .current_dir(ws.path())
+        .arg("-v")
+        .arg(&lcov1)
+        .status()
+        .unwrap();
+
+    // do not test output of verbose test
+    assert!(result.success());
+}
