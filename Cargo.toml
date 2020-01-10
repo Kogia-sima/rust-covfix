@@ -23,7 +23,7 @@ path = "src/lib.rs"
 doctest = false
 
 [features]
-default = ["cli", "backtrace", "lcov"]
+default = ["cli", "lcov"]
 cli = ["argparse"]
 noinline = []
 lcov = []
