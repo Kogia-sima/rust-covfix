@@ -30,6 +30,10 @@ impl CoverageFixer {
 
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
+        if self.rules.is_empty() {
+            debugln!("Skipping fix because rules are empty");
+        }
+
         let old = CoverageSummary::new(data);
 
         debugln!("Fixing package coverage");
