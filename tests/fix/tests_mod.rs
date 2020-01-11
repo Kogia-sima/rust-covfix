@@ -22,3 +22,13 @@ mod tests {
         assert_eq!(4, add_two(2));
     }
 }
+
+fn function_for_test() -> i32 {
+    let mut a = 1;
+
+    // this line should be ignored
+    #[cfg(test)]
+    a += 1;
+
+    return a;
+}
