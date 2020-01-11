@@ -69,7 +69,7 @@ fn target_dir_not_found() {
     }
 
     let status = Command::new(exe)
-        .arg(ws.path().join("lcov_not_exists.info"))
+        .arg(ws.path().join("lcov_empty.info"))
         .current_dir(ws.path().ancestors().last().unwrap())
         .stderr(Stdio::null())
         .status()
