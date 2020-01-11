@@ -88,11 +88,15 @@ fn tests_mod() {
         2 => 1,
         11 => 1,
         12 => 1,
+        20 => 1,
+        21 => 1
     );
 
     let expected_line_covs = line_coverages!(
         0 => 1,
         1 => 1,
+        20 => 1,
+        21 => 1
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
