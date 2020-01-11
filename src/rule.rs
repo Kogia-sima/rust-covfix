@@ -560,6 +560,8 @@ mod tests {
         assert_eq!(super::extract_marker("cov:ignore-linee"), None);
         assert_eq!(super::extract_marker("cov:ignore--branch"), None);
         assert_eq!(super::extract_marker("cov:ignore"), Some(IgnoreBoth));
+        assert_eq!(super::extract_marker("cov:ignore-line-begin"), None);
+        assert_eq!(super::extract_marker("cov:ignore-end"), None);
         assert_eq!(
             super::extract_marker("//\tcov:ignore-line"),
             Some(IgnoreLine)
