@@ -86,8 +86,8 @@ fn tests_mod() {
         0 => 1,
         1 => 1,
         2 => 1,
-        9 => 1,
-        10 => 1,
+        11 => 1,
+        12 => 1,
     );
 
     let expected_line_covs = line_coverages!(

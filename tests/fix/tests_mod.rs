@@ -3,6 +3,8 @@ pub fn add_two(a: i32) -> i32 {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
+
 mod tests {
     use super::*;
 
