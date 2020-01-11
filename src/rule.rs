@@ -521,6 +521,7 @@ fn parse_marker(key: &str) -> Option<CommentMarker> {
     }
 }
 
+// cov:begin-ignore
 macro_rules! impl_default {
     ($name:ident) => {
         impl Default for $name {
@@ -531,7 +532,6 @@ macro_rules! impl_default {
     };
 }
 
-// cov:begin-ignore
 impl_default!(CloseBlockRule);
 impl_default!(TestRule);
 impl_default!(LoopRule);
