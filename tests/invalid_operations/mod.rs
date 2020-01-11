@@ -56,3 +56,24 @@ fn source_file_not_found() {
     assert_matches!(result, Err(_));
     assert_matches!(result.unwrap_err().kind(), ErrorKind::SourceFileNotFound(_));
 }
+
+#[test]
+fn target_dir_not_found() {
+    let ws = WorkSpace::from_template("tests/invalid_operations");
+
+    let mut exe = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if cfg!(windows) {
+        exe.push("target\\debug\\rust-covfix");
+    } else {
+        exe.push("target/debug/rust-covfix");
+    }
+
+    let status = Command::new(exe)
+        .arg(ws.path().join("lcov_not_exists.info"))
+        .current_dir(ws.path().ancestors().last().unwrap())
+        .stderr(Stdio::null())
+        .status()
+        .unwrap();
+
+    assert!(!status.success());
+}
