@@ -100,7 +100,7 @@ impl Arguments {
             .required()
             .add_argument("file", Store, "coverage file");
         ap.add_option(
-            &["-v", "--version"],
+            &["-V", "--version"],
             Print(env!("CARGO_PKG_VERSION").to_owned()),
             "display version",
         );
@@ -116,7 +116,7 @@ impl Arguments {
             StoreOption,
             "project root directory",
         );
-        ap.refer(&mut args.rules).metavar("STR,[STR..]").add_option(
+        ap.refer(&mut args.rules).metavar("STR[,STR..]").add_option(
             &["--rules"],
             StoreOption,
             "use specified rules to fix coverages. Valid names are [close, test, loop, derive]",
