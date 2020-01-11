@@ -81,6 +81,39 @@ fn no_rule() {
 }
 
 #[test]
+fn no_fix() {
+    let ws = WorkSpace::from_template("tests/guess_game");
+
+    let lcov1 = ws.path().join("lcov.info");
+    let lcov2 = ws.path().join("lcov_nofix.info");
+    let lcov3 = ws.path().join("lcov3.info");
+
+    let mut exe = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if cfg!(windows) {
+        exe.push("target\\debug\\rust-covfix");
+    } else {
+        exe.push("target/debug/rust-covfix");
+    }
+
+    let result = Command::new(exe)
+        .current_dir(ws.path().join("src"))
+        .arg("-o")
+        .arg(&lcov3)
+        .arg("--no-fix")
+        .arg("--verbose")
+        .arg(&lcov1)
+        .output()
+        .unwrap();
+
+    assert!(result.status.success());
+
+    let expected_content = fs::read_to_string(lcov2).unwrap();
+    let content = fs::read_to_string(lcov3).unwrap();
+
+    assert_eq!(content.trim(), expected_content.trim());
+}
+
+#[test]
 fn verbose() {
     let ws = WorkSpace::from_template("tests/guess_game");
 
