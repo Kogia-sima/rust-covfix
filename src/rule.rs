@@ -135,7 +135,7 @@ impl Rule for LoopRule {
 
             if should_be_fixed && self.loop_reg.is_match(entry.line) {
                 for branch_cov in entry.branch_covs {
-                    if !branch_cov.taken.unwrap_or(false) {
+                    if branch_cov.taken == Some(false) {
                         branch_cov.taken = None;
                         break;
                     }
