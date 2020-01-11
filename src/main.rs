@@ -57,9 +57,11 @@ fn run() -> Result<(), Error> {
 
     debugln!("Found {} entries", coverage.file_coverages().len());
 
-    fixer
-        .fix(&mut coverage)
-        .chain_err(|| "Failed to fix coverage")?;
+    if !options.nofix {
+        fixer
+            .fix(&mut coverage)
+            .chain_err(|| "Failed to fix coverage")?;
+    }
 
     if let Some(file) = options.output_file {
         debugln!("Writing coverage to {:?}", file);
@@ -81,6 +83,7 @@ struct Arguments {
     output_file: Option<PathBuf>,
     root: Option<PathBuf>,
     rules: Option<String>,
+    nofix: bool,
     verbose: bool,
 }
 
@@ -91,6 +94,7 @@ impl Arguments {
             input_file: PathBuf::new(),
             output_file: None,
             rules: None,
+            nofix: false,
             verbose: false,
         };
 
@@ -106,6 +110,8 @@ impl Arguments {
         );
         ap.refer(&mut args.verbose)
             .add_option(&["-v", "--verbose"], StoreTrue, "verbose output");
+        ap.refer(&mut args.nofix)
+            .add_option(&["-n", "--no-fix"], StoreTrue, "do not fix coverage");
         ap.refer(&mut args.output_file).metavar("FILE").add_option(
             &["-o", "--output"],
             StoreOption,
