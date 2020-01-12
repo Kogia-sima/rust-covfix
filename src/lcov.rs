@@ -147,6 +147,7 @@ impl LcovParser {
         let prefix = &line[0..end];
         let mut contents = line[end + 1..].split(',');
 
+        // cov:begin-ignore-branch
         match prefix {
             "TN" => Some(RawData::TN(contents.next().unwrap_or(""))),
             "SF" => Some(RawData::SF(Path::new(contents.next()?))),
@@ -184,8 +185,10 @@ impl LcovParser {
             "BRH" => Some(RawData::BRH(contents.next()?.parse().ok()?)),
             _ => None,
         }
+        // cov:end-ignore-branch
     }
 
+    // cov:begin-ignore-branch
     fn write_package_coverage<W: Write>(
         &self,
         writer: &mut W,
@@ -267,4 +270,5 @@ impl LcovParser {
 
         Ok(())
     }
+    // cov:end-ignore-branch
 }

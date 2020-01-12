@@ -20,6 +20,7 @@ Though only `lcov` format is supprted at current, Another formats is going to be
 - Lightweight (small dependencies)
 - Fast and safe (implemented in Rust language)
 - `rust-covfix` is also available with Rust API ([Documentation](https://docs.rs/rust-covfix))
+- Show summary of coverage difference.
 
 ### Optional features
 
@@ -32,9 +33,9 @@ $ cargo install --no-default-features --features "cli lcov"
 |Feature name|Description|Default?|
 |:--:|--|:--:|
 |cli|Command Line Interface. This feature is required to build `rust-covfix` executable.|yes|
-|noinline|Avoid adding `#cfg[inline]` attribute on function.|no|
 |lcov|Make LcovParser available|yes|
-|backtrace|Dump backtrace information on every time the error has occured.|yes|
+|noinline|Avoid adding `#cfg[inline]` attribute on function.|no|
+|backtrace|Dump backtrace information on every time the error has occured.|no|
 
 ## Install
 
@@ -100,11 +101,41 @@ struct Point {  // <-- removed from coverage
 }  // <-- removed from coverage
 ```
 
+#### comment
+
+ignore coverage based on comment marker
+
+```rust
+fn main() {
+    let a = 1 + 2; // cov:ignore-line
+
+    // cov:begin-ignore-branch
+    println!("Hello");
+    println!("world!");
+    // cov:end-ignore-branch
+
+    // cov: begin-ignore-line
+    if a > 2 {
+        println!("a is large!");
+    } else if a == 0 {
+        println!("a is small!");
+    }
+    // cov: end-ignore-line
+
+    // cov:begin-ignore
+    println!("a = {}", a);
+    // cov:end-ignore
+
+    println!("finish."); // cov:ignore-branch
+
+    return (); // cov:ignore
+}
+```
+
 ## Roadmap
 
 - Support `cobertura.xml` file. (WIP)
 - Add option for uploading the correct coverages to coveralls.
-- Show summary of coverage difference.
 
 ## Author
 

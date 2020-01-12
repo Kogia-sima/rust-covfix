@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::coverage::PackageCoverage;
+use crate::coverage::{PackageCoverage, TotalCoverage};
 use crate::error::*;
 use crate::rule::{default_rules, Rule};
 
@@ -30,6 +30,13 @@ impl CoverageFixer {
 
     /// fix coverage information
     pub fn fix(&self, data: &mut PackageCoverage) -> Result<(), Error> {
+        if self.rules.is_empty() {
+            debugln!("Skipping fix because rules are empty");
+        }
+
+        let old = CoverageSummary::new(data);
+
+        debugln!("Fixing package coverage");
         for mut file_cov in &mut data.file_coverages {
             file_cov
                 .line_coverages
@@ -39,6 +46,8 @@ impl CoverageFixer {
                 .sort_unstable_by_key(|v| v.line_number);
 
             let path = file_cov.path();
+            debugln!("Processing file {:?}", path);
+
             let source = fs::read_to_string(path)
                 .chain_err(|| format!("Failed to open source file: {:?}", path))?;
 
@@ -50,6 +59,62 @@ impl CoverageFixer {
             file_cov.branch_coverages.retain(|v| v.taken.is_some());
         }
 
+        let new = CoverageSummary::new(data);
+
+        infoln!("Coverages are fixed successfully!");
+
+        infoln!(
+            "  line:   {:.2}% ({} of {} lines)    => {:.2}% ({} of {} lines)",
+            old.line_percent(),
+            old.line_executed,
+            old.line_total,
+            new.line_percent(),
+            new.line_executed,
+            new.line_total,
+        );
+
+        infoln!(
+            "  branch: {:.2}% ({} of {} branches) => {:.2}% ({} of {} branches)\n",
+            old.branch_percent(),
+            old.branch_executed,
+            old.branch_total,
+            new.branch_percent(),
+            new.branch_executed,
+            new.branch_total,
+        );
+
         Ok(())
+    }
+}
+
+impl Default for CoverageFixer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+struct CoverageSummary {
+    line_executed: usize,
+    line_total: usize,
+    branch_executed: usize,
+    branch_total: usize,
+}
+
+impl CoverageSummary {
+    fn new(data: &PackageCoverage) -> Self {
+        Self {
+            line_executed: data.line_executed(),
+            line_total: data.line_total(),
+            branch_executed: data.branch_executed(),
+            branch_total: data.branch_total(),
+        }
+    }
+
+    fn line_percent(&self) -> f64 {
+        (self.line_executed as f64) / (self.line_total as f64) * 100.0
+    }
+
+    fn branch_percent(&self) -> f64 {
+        (self.branch_executed as f64) / (self.branch_total as f64) * 100.0
     }
 }

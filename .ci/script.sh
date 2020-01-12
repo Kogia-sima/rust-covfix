@@ -9,6 +9,8 @@ if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
 
   wget https://github.com/mozilla/grcov/releases/download/v0.5.7/grcov-linux-x86_64.tar.bz2
   tar xvf grcov-linux-x86_64.tar.bz2
+else
+  export CARGO_OPTIONS="--features backtrace"
 fi
 
 cargo build $CARGO_OPTIONS
