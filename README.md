@@ -43,8 +43,31 @@ Download the latest release from [GitHub Release Page](https://github.com/Kogia-
 
 You can also install via `cargo` command.
 
-```rust
+```console
 $ cargo install rust-covfix
+```
+
+## Usage
+
+```console
+$ rust-covfix --help
+Usage:
+  rust-covfix [OPTIONS] FILE
+
+Rust coverage fixer
+
+Positional arguments:
+  file                  coverage file
+
+Optional arguments:
+  -h,--help             Show this help message and exit
+  -V,--version          display version
+  -v,--verbose          verbose output
+  -n,--no-fix           do not fix coverage
+  -o,--output FILE      output file name (default: stdout)
+  --root DIR            project root directory
+  --rules STR[,STR..]   use specified rules to fix coverages. Valid names are
+                        [close, test, loop, derive]
 ```
 
 ## How is the incorrect line coverage detected
