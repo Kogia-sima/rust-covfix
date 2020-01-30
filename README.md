@@ -159,6 +159,8 @@ fn main() {
 
 - Support `cobertura.xml` file. (WIP)
 - Add option for uploading the correct coverages to coveralls.
+- Use syntax tree generated using [syn](https://crates.io/crates/syn) crate.
+- Performance improvement
 
 ## Author
 
