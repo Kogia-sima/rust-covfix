@@ -13,7 +13,7 @@ impl Point {
     }
 }
 
-#[derive(Clone)]
+#[derive(PartialEq)]
 pub struct Color(u8, u8, u8);
 
 impl Color {
@@ -42,3 +42,14 @@ impl E {
         Self::A(s)
     }
 }
+
+#[derive(Copy, Clone)]
+union MyUnion {
+    f1: u32,
+    f2: f32,
+}
+
+#[derive(Clone, Copy)]
+struct UnitType;
+
+enum EmptyEnum {}
