@@ -13,6 +13,7 @@ error_chain! {
     foreign_links {
         FmtError(fmt::Error);
         IoError(io::Error);
+        ParseError(syn::Error);
         RegexError(regex::Error);
     }
 

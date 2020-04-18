@@ -94,6 +94,17 @@ fn tests_mod() {
         27 => 1,
         31 => 1,
         33 => 1,
+        38 => 1,
+        39 => 1,
+    );
+
+    let original_branch_covs = branch_coverages!(
+        13 => true,
+        13 => false,
+        22 => true,
+        22 => false,
+        39 => true,
+        39 => false,
     );
 
     let expected_line_covs = line_coverages!(
@@ -105,12 +116,21 @@ fn tests_mod() {
         27 => 1,
         31 => 1,
         33 => 1,
+        38 => 1,
+        39 => 1,
+    );
+
+    let expected_branch_covs = branch_coverages!(
+        22 => true,
+        22 => false,
+        39 => true,
+        39 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
         &source_file,
         original_line_covs,
-        vec![],
+        original_branch_covs,
     )]);
 
     let fixer = CoverageFixer::new();
@@ -119,6 +139,11 @@ fn tests_mod() {
     assert_eq!(
         coverage.file_coverages()[0].line_coverages(),
         &*expected_line_covs
+    );
+
+    assert_eq!(
+        coverage.file_coverages()[0].branch_coverages(),
+        &*expected_branch_covs
     );
 }
 
@@ -155,6 +180,16 @@ fn derives() {
         41 => 0,
         42 => 0,
         43 => 0,
+        46 => 0,
+        47 => 0,
+        48 => 0,
+        49 => 0,
+        52 => 0,
+        53 => 0,
+    );
+
+    let original_branch_covs = branch_coverages!(
+        17 => false,
     );
 
     let expected_line_covs = line_coverages!(
@@ -175,7 +210,7 @@ fn derives() {
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
         &source_file,
         original_line_covs,
-        vec![],
+        original_branch_covs,
     )]);
 
     let fixer = CoverageFixer::new();
@@ -185,6 +220,8 @@ fn derives() {
         coverage.file_coverages()[0].line_coverages(),
         &*expected_line_covs
     );
+
+    assert_eq!(coverage.file_coverages()[0].branch_coverages(), &[]);
 }
 
 #[test]

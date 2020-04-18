@@ -32,3 +32,10 @@ fn function_for_test() -> i32 {
 
     return a;
 }
+
+#[cfg(not(test))]
+mod imp {
+    fn hello() {
+        println!("Hello, world!");
+    }
+}
