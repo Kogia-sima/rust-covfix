@@ -1,8 +1,6 @@
-use std::fs;
-
 use crate::coverage::{PackageCoverage, TotalCoverage};
 use crate::error::*;
-use crate::rule::{default_rules, Rule};
+use crate::rule::{default_rules, Rule, SourceCode};
 
 /// Fix coverage information based on source code
 ///
@@ -37,7 +35,7 @@ impl CoverageFixer {
         let old = CoverageSummary::new(data);
 
         debugln!("Fixing package coverage");
-        for mut file_cov in &mut data.file_coverages {
+        for file_cov in &mut data.file_coverages {
             file_cov
                 .line_coverages
                 .sort_unstable_by_key(|v| v.line_number);
@@ -48,11 +46,17 @@ impl CoverageFixer {
             let path = file_cov.path();
             debugln!("Processing file {:?}", path);
 
-            let source = fs::read_to_string(path)
-                .chain_err(|| format!("Failed to open source file: {:?}", path))?;
+            let source = match SourceCode::new(path) {
+                Ok(s) => s,
+                Err(e) => {
+                    warnln!("{:?}", e);
+                    warnln!("Failed to open source code. Skipping...");
+                    continue;
+                }
+            };
 
             for rule in &self.rules {
-                rule.fix_file_coverage(&source, &mut file_cov);
+                rule.fix_file_coverage(&source, file_cov);
             }
 
             file_cov.line_coverages.retain(|v| v.count.is_some());

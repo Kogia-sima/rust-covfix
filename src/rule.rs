@@ -1,11 +1,29 @@
 use regex::Regex;
+use std::fs;
 use std::marker::PhantomData;
+use std::path::Path;
+use syn::File;
 
 use crate::error::*;
 use crate::{BranchCoverage, FileCoverage, LineCoverage};
 
+pub struct SourceCode {
+    pub content: String,
+    pub ast: File,
+}
+
+impl SourceCode {
+    pub fn new(filename: &Path) -> Result<SourceCode, Error> {
+        let content = fs::read_to_string(filename)
+            .chain_err(|| format!("Failed to open source file: {:?}", filename))?;
+        let ast =
+            syn::parse_file(&content).chain_err(|| format!("Failed to parse {:?}", filename))?;
+        Ok(SourceCode { content, ast })
+    }
+}
+
 pub trait Rule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage);
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage);
 }
 
 pub struct CloseBlockRule {
@@ -25,8 +43,8 @@ impl CloseBlockRule {
 }
 
 impl Rule for CloseBlockRule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
-        for entry in PerLineIterator::new(source, file_cov) {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
+        for entry in PerLineIterator::new(&source.content, file_cov) {
             if entry.line_cov.is_none() && entry.branch_covs.is_empty() {
                 continue;
             }
@@ -61,7 +79,7 @@ impl TestRule {
 }
 
 impl Rule for TestRule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
         fn ignore_coverages(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
                 line_cov.count = None;
@@ -73,7 +91,7 @@ impl Rule for TestRule {
         let mut cfg_found = false;
         let mut inside_test = false;
 
-        for mut entry in PerLineIterator::new(source, file_cov) {
+        for mut entry in PerLineIterator::new(&source.content, file_cov) {
             if inside_test {
                 ignore_coverages(&mut entry);
 
@@ -116,7 +134,7 @@ impl LoopRule {
 }
 
 impl Rule for LoopRule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
         if file_cov.branch_coverages.is_empty() {
             debugln!(
                 "Skipping LoopRule because the file coverage does not contain any branch coverage."
@@ -124,7 +142,7 @@ impl Rule for LoopRule {
             return;
         }
 
-        for entry in PerLineIterator::new(source, file_cov) {
+        for entry in PerLineIterator::new(&source.content, file_cov) {
             if entry.branch_covs.is_empty() {
                 continue;
             }
@@ -161,7 +179,7 @@ impl DeriveRule {
 }
 
 impl Rule for DeriveRule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
         fn ignore_coverages(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
                 line_cov.count = None;
@@ -173,7 +191,7 @@ impl Rule for DeriveRule {
         let mut cfg_found = false;
         let mut inside_derive = false;
 
-        for mut entry in PerLineIterator::new(source, file_cov) {
+        for mut entry in PerLineIterator::new(&source.content, file_cov) {
             if inside_derive {
                 ignore_coverages(&mut entry);
 
@@ -225,7 +243,7 @@ impl CommentRule {
 }
 
 impl Rule for CommentRule {
-    fn fix_file_coverage(&self, source: &str, file_cov: &mut FileCoverage) {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
         fn ignore_line(entry: &mut CoverageEntry) {
             if let Some(&mut ref mut line_cov) = entry.line_cov {
                 line_cov.count = None;
@@ -245,7 +263,7 @@ impl Rule for CommentRule {
         let mut inside_ignore_branch = false;
         let mut inside_ignore_both = false;
 
-        for mut entry in PerLineIterator::new(source, file_cov) {
+        for mut entry in PerLineIterator::new(&source.content, file_cov) {
             use CommentMarker::*;
 
             let marker = extract_marker(entry.line);
