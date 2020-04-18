@@ -148,7 +148,7 @@ impl Rule for LoopRule {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
         let mut inner = LoopRuleInner {
             it: PerLineIterator::new(&source.content, file_cov),
-            current_line: 1,
+            current_line: 0,
         };
         inner.visit_file(&source.ast);
     }
@@ -163,11 +163,8 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
     fn visit_expr_for_loop(&mut self, expr: &'ast ExprForLoop) {
         let line = expr.for_token.span.start().line;
 
-        let entry = self.it.nth(line - self.current_line).unwrap();
+        let entry = self.it.nth(line - self.current_line - 1).unwrap();
         self.current_line = line;
-        if entry.branch_covs.is_empty() {
-            return;
-        }
 
         let should_be_fixed = entry
             .line_cov
