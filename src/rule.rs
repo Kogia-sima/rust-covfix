@@ -361,7 +361,7 @@ impl<'a, 'b> PerLineIterator<'a, 'b> {
         let bp_end = unsafe { bp.add(file_cov.branch_coverages.len()) };
 
         Self {
-            line_number: 0,
+            line_number: 1,
             lines: source.lines().collect(),
             lp,
             bp,
@@ -376,12 +376,12 @@ impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
     type Item = CoverageEntry<'a, 'b>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.line_number >= self.lines.len() {
+        if self.line_number > self.lines.len() {
             return None;
         }
 
         unsafe {
-            let line = self.lines.get_unchecked_mut(self.line_number);
+            let line = self.lines.get_unchecked_mut(self.line_number - 1);
 
             // line coverage at current line
             let line_cov = if self.lp < self.lp_end && (*self.lp).line_number == self.line_number {

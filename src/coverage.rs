@@ -7,7 +7,7 @@ use crate::error::*;
 /// Coverage information for a single line
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineCoverage {
-    /// line number
+    /// 1-indexed line in the source file
     pub line_number: usize,
     /// execution count of line. `None` means this line is not executable.
     /// `None` value is used when the fixer detects non-executable line.
@@ -17,7 +17,7 @@ pub struct LineCoverage {
 /// Coverage information for a single branch
 #[derive(Clone, Debug, PartialEq)]
 pub struct BranchCoverage {
-    /// line number
+    /// 1-indexed line in the source file
     pub line_number: usize,
     /// block id which contains this branch
     pub block_number: Option<usize>,
