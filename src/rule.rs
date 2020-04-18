@@ -1,8 +1,10 @@
+use proc_macro2::{Span, TokenTree};
 use regex::Regex;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
-use syn::File;
+use syn::visit::Visit;
+use syn::{ExprForLoop, Fields, File, ItemEnum, ItemMod, ItemStruct, ItemUnion};
 
 use crate::error::*;
 use crate::{BranchCoverage, FileCoverage, LineCoverage};
@@ -60,59 +62,72 @@ impl Rule for CloseBlockRule {
     }
 }
 
-pub struct TestRule {
-    cfg_reg: Regex,
-    mod_reg: Regex,
-}
+pub struct TestRule;
 
 impl TestRule {
     #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new() -> Self {
-        Self {
-            cfg_reg: Regex::new(
-                r"^\s*#\s*\[\s*cfg\((?:test)|(?:.*[ \t\(]test[,\)])\)\s*\]\s*(?://.*)?$",
-            )
-            .unwrap(),
-            mod_reg: Regex::new(r"^\s*(?:pub\s+)?mod\s+tests?\s*\{").unwrap(),
-        }
+        Self
     }
 }
 
 impl Rule for TestRule {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
-        fn ignore_coverages(entry: &mut CoverageEntry) {
-            if let Some(&mut ref mut line_cov) = entry.line_cov {
-                line_cov.count = None;
-            }
+        let mut inner = TestRuleInner { file_cov };
+        inner.visit_file(&source.ast);
+    }
+}
 
-            entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
+struct TestRuleInner<'a> {
+    file_cov: &'a mut FileCoverage,
+}
+
+impl<'a> TestRuleInner<'a> {
+    fn ignore_range(&mut self, span: Span) {
+        for line_cov in self
+            .file_cov
+            .line_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < span.start().line)
+            .take_while(|e| e.line_number <= span.end().line)
+        {
+            line_cov.count = None;
         }
 
-        let mut cfg_found = false;
-        let mut inside_test = false;
+        for branch_cov in self
+            .file_cov
+            .branch_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < span.start().line)
+            .take_while(|e| e.line_number <= span.end().line)
+        {
+            branch_cov.taken = None;
+        }
+    }
+}
 
-        for mut entry in PerLineIterator::new(&source.content, file_cov) {
-            if inside_test {
-                ignore_coverages(&mut entry);
+impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
+    fn visit_item_mod(&mut self, item: &'ast ItemMod) {
+        let span = match item.content {
+            Some((ref brace, _)) => brace.span,
+            None => return,
+        };
 
-                if entry.line.bytes().next() == Some(b'}') {
-                    inside_test = false;
-                }
-            } else if !cfg_found {
-                if self.cfg_reg.is_match(entry.line) {
-                    cfg_found = true;
-                }
-            } else {
-                if self.mod_reg.is_match(entry.line) {
-                    inside_test = true;
-                    cfg_found = false;
-                    continue;
-                }
+        for attr in item.attrs.iter() {
+            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "cfg" {
+                for token in attr.tokens.clone() {
+                    if let TokenTree::Group(g) = token {
+                        let token = match g.stream().into_iter().next() {
+                            Some(t) => t,
+                            None => continue,
+                        };
 
-                let line = entry.line.trim_start();
-                if let Some(b) = line.bytes().next() {
-                    if b != b'#' && b != b'/' {
-                        cfg_found = false;
+                        if let TokenTree::Ident(ident) = token {
+                            if ident == "test" {
+                                self.ignore_range(span);
+                                return;
+                            }
+                        }
                     }
                 }
             }
@@ -120,114 +135,141 @@ impl Rule for TestRule {
     }
 }
 
-pub struct LoopRule {
-    loop_reg: Regex,
-}
+pub struct LoopRule;
 
 impl LoopRule {
     #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new() -> Self {
-        Self {
-            loop_reg: Regex::new(r"^\s*for\s*.*\{\s*(?://.*)?$").unwrap(),
-        }
+        Self
     }
 }
 
 impl Rule for LoopRule {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
-        if file_cov.branch_coverages.is_empty() {
-            debugln!(
-                "Skipping LoopRule because the file coverage does not contain any branch coverage."
-            );
+        let mut inner = LoopRuleInner {
+            it: PerLineIterator::new(&source.content, file_cov),
+            current_line: 1,
+        };
+        inner.visit_file(&source.ast);
+    }
+}
+
+struct LoopRuleInner<'a, 'b> {
+    it: PerLineIterator<'a, 'b>,
+    current_line: usize,
+}
+
+impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
+    fn visit_expr_for_loop(&mut self, expr: &'ast ExprForLoop) {
+        let line = expr.for_token.span.start().line;
+
+        let entry = self.it.nth(line - self.current_line).unwrap();
+        if entry.branch_covs.is_empty() {
             return;
         }
 
-        for entry in PerLineIterator::new(&source.content, file_cov) {
-            if entry.branch_covs.is_empty() {
-                continue;
-            }
+        let should_be_fixed = entry
+            .line_cov
+            .map_or(false, |v| v.count.map_or(false, |c| c > 0));
 
-            let should_be_fixed = entry
-                .line_cov
-                .map_or(false, |v| v.count.map_or(false, |c| c > 0));
-
-            if should_be_fixed && self.loop_reg.is_match(entry.line) {
-                for branch_cov in entry.branch_covs {
-                    if branch_cov.taken == Some(false) {
-                        branch_cov.taken = None;
-                        break;
-                    }
+        if should_be_fixed {
+            for branch_cov in entry.branch_covs {
+                if branch_cov.taken == Some(false) {
+                    branch_cov.taken = None;
+                    break;
                 }
             }
         }
     }
 }
 
-pub struct DeriveRule {
-    cfg_reg: Regex,
-    decl_reg: Regex,
-}
+pub struct DeriveRule;
 
 impl DeriveRule {
     #[cfg_attr(not(feature = "noinline"), inline)]
     pub fn new() -> Self {
-        Self {
-            cfg_reg: Regex::new(r"^\s*#\s*\[\s*derive\(.*\)\s*\]").unwrap(),
-            decl_reg: Regex::new(r"^\s*(:?pub\s*)?(?:struct)|(?:enum)|(?:union)\s*\w+").unwrap(),
-        }
+        Self
     }
 }
 
 impl Rule for DeriveRule {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
-        fn ignore_coverages(entry: &mut CoverageEntry) {
-            if let Some(&mut ref mut line_cov) = entry.line_cov {
-                line_cov.count = None;
-            }
+        let mut inner = DeriveLoopInner { file_cov };
+        inner.visit_file(&source.ast);
+    }
+}
 
-            entry.branch_covs.iter_mut().for_each(|v| v.taken = None);
+struct DeriveLoopInner<'a> {
+    file_cov: &'a mut FileCoverage,
+}
+
+impl<'a> DeriveLoopInner<'a> {
+    fn ignore_range(&mut self, start: usize, end: usize) {
+        for line_cov in self
+            .file_cov
+            .line_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
+        {
+            line_cov.count = None;
         }
 
-        let mut cfg_found = false;
-        let mut inside_derive = false;
+        for branch_cov in self
+            .file_cov
+            .branch_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
+        {
+            branch_cov.taken = None;
+        }
+    }
+}
 
-        for mut entry in PerLineIterator::new(&source.content, file_cov) {
-            if inside_derive {
-                ignore_coverages(&mut entry);
+impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
+    fn visit_item_struct(&mut self, item: &'ast ItemStruct) {
+        let start = match item.attrs.get(0) {
+            Some(attr) => attr.pound_token.spans[0].start().line,
+            None => return,
+        };
+        let end = match item.fields {
+            Fields::Named(ref f) => f.brace_token.span.end().line,
+            Fields::Unnamed(ref f) => f.paren_token.span.end().line,
+            Fields::Unit => item.ident.span().end().line,
+        };
 
-                let line = trim_comments(entry.line);
-                if line.trim_start().bytes().next() == Some(b'#') {
-                    // ignore cfg
-                    continue;
-                }
+        for attr in item.attrs.iter() {
+            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
+                self.ignore_range(start, end);
+            }
+        }
+    }
 
-                if line.bytes().any(|v| v == b'}') {
-                    inside_derive = false;
-                }
-            } else if cfg_found {
-                if self.decl_reg.is_match(entry.line) {
-                    ignore_coverages(&mut entry);
+    fn visit_item_enum(&mut self, item: &'ast ItemEnum) {
+        let start = match item.attrs.get(0) {
+            Some(attr) => attr.pound_token.spans[0].start().line,
+            None => return,
+        };
+        let end = item.brace_token.span.end().line;
 
-                    let line = trim_comments(entry.line);
-                    if line.bytes().find(|&v| v == b';' || v == b'}').is_none() {
-                        inside_derive = true;
-                        cfg_found = false;
-                    }
-                } else {
-                    let line = entry.line.trim_start();
-                    if let Some(b) = line.bytes().next() {
-                        if b != b'#' && b != b'/' {
-                            cfg_found = false;
-                        }
-                    }
+        for attr in item.attrs.iter() {
+            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
+                self.ignore_range(start, end);
+            }
+        }
+    }
 
-                    if cfg_found {
-                        ignore_coverages(&mut entry);
-                    }
-                }
-            } else if self.cfg_reg.is_match(entry.line) {
-                ignore_coverages(&mut entry);
-                cfg_found = true;
+    fn visit_item_union(&mut self, item: &'ast ItemUnion) {
+        let start = match item.attrs.get(0) {
+            Some(attr) => attr.pound_token.spans[0].start().line,
+            None => return,
+        };
+        let end = item.fields.brace_token.span.end().line;
+
+        for attr in item.attrs.iter() {
+            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
+                self.ignore_range(start, end);
             }
         }
     }
@@ -436,29 +478,6 @@ impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
     }
 }
 
-fn trim_comments(s: &str) -> &str {
-    let mut inside_quote = false;
-    let mut slash_pos = s.len();
-
-    for (i, b) in s.bytes().enumerate() {
-        if inside_quote {
-            if b == b'"' {
-                inside_quote = false;
-            }
-        } else if b == b'"' {
-            inside_quote = true;
-        } else if b == b'/' {
-            if slash_pos + 1 == i {
-                return &s[0..slash_pos];
-            } else {
-                slash_pos = i;
-            }
-        }
-    }
-
-    s
-}
-
 #[derive(Debug, PartialEq)]
 enum CommentMarker {
     IgnoreLine,
@@ -559,18 +578,6 @@ impl_default!(CommentRule);
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn trim_comments() {
-        assert_eq!(
-            super::trim_comments("line: \"// comment\""),
-            "line: \"// comment\""
-        );
-        assert_eq!(super::trim_comments("1 / 2"), "1 / 2");
-        assert_eq!(super::trim_comments("1 // 2"), "1 ");
-        assert_eq!(super::trim_comments("1 // 2 // 3"), "1 ");
-        assert_eq!(super::trim_comments("1 + 2 // comment"), "1 + 2 ");
-    }
-
     #[test]
     fn extract_marker() {
         use super::CommentMarker::*;
