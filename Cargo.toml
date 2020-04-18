@@ -43,5 +43,10 @@ version = "1.0.17"
 default-features = false
 features = ["parsing", "visit", "full"]
 
+[dependencies.proc-macro2]
+version = "1.0.10"
+default-features = false
+features = ["span-locations"]
+
 [dev-dependencies]
 tempfile = "3.1.0"
