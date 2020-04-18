@@ -164,6 +164,7 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
         let line = expr.for_token.span.start().line;
 
         let entry = self.it.nth(line - self.current_line).unwrap();
+        self.current_line = line;
         if entry.branch_covs.is_empty() {
             return;
         }
