@@ -39,7 +39,7 @@ pub struct FileCoverage {
 }
 
 impl FileCoverage {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new<P: Into<PathBuf>>(
         path: P,
         line_coverages: Vec<LineCoverage>,
@@ -52,17 +52,17 @@ impl FileCoverage {
         }
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn path(&self) -> &Path {
         &self.path
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn line_coverages(&self) -> &[LineCoverage] {
         &self.line_coverages
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn branch_coverages(&self) -> &[BranchCoverage] {
         &self.branch_coverages
     }
@@ -77,12 +77,12 @@ pub struct PackageCoverage {
 }
 
 impl PackageCoverage {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new(file_coverages: Vec<FileCoverage>) -> Self {
         Self::with_test_name("", file_coverages)
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn with_test_name<T: Into<String>>(name: T, file_coverages: Vec<FileCoverage>) -> Self {
         Self {
             name: name.into(),
@@ -90,12 +90,12 @@ impl PackageCoverage {
         }
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn file_coverages(&self) -> &[FileCoverage] {
         &self.file_coverages
     }
@@ -111,7 +111,7 @@ pub trait TotalCoverage {
 
 #[doc(hidden)]
 impl TotalCoverage for FileCoverage {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_executed(&self) -> usize {
         self.line_coverages
             .iter()
@@ -119,7 +119,7 @@ impl TotalCoverage for FileCoverage {
             .count()
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_total(&self) -> usize {
         self.line_coverages
             .iter()
@@ -127,7 +127,7 @@ impl TotalCoverage for FileCoverage {
             .count()
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_executed(&self) -> usize {
         self.branch_coverages
             .iter()
@@ -135,7 +135,7 @@ impl TotalCoverage for FileCoverage {
             .count()
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_total(&self) -> usize {
         self.branch_coverages
             .iter()
@@ -146,28 +146,28 @@ impl TotalCoverage for FileCoverage {
 
 #[doc(hidden)]
 impl TotalCoverage for PackageCoverage {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_executed(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.line_executed())
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_total(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.line_total())
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_executed(&self) -> usize {
         self.file_coverages
             .iter()
             .fold(0, |sum, a| sum + a.branch_executed())
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_total(&self) -> usize {
         self.file_coverages
             .iter()

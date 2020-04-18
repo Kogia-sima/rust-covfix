@@ -14,14 +14,14 @@ pub struct CoverageFixer {
 }
 
 impl CoverageFixer {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self {
             rules: default_rules(),
         }
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn with_rules<I: Into<Vec<Box<dyn Rule>>>>(rules: I) -> Self {
         Self {
             rules: rules.into(),
@@ -88,6 +88,7 @@ impl CoverageFixer {
 }
 
 impl Default for CoverageFixer {
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn default() -> Self {
         Self::new()
     }
@@ -101,6 +102,7 @@ struct CoverageSummary {
 }
 
 impl CoverageSummary {
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn new(data: &PackageCoverage) -> Self {
         Self {
             line_executed: data.line_executed(),
@@ -110,10 +112,12 @@ impl CoverageSummary {
         }
     }
 
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_percent(&self) -> f64 {
         (self.line_executed as f64) / (self.line_total as f64) * 100.0
     }
 
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_percent(&self) -> f64 {
         (self.branch_executed as f64) / (self.branch_total as f64) * 100.0
     }

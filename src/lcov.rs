@@ -122,7 +122,7 @@ impl CoverageReader for LcovParser {
 }
 
 impl CoverageWriter for LcovParser {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn write<W: Write>(&self, data: &PackageCoverage, writer: &mut W) -> Result<(), Error> {
         self.write_package_coverage(writer, data)
     }
