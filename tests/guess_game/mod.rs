@@ -59,7 +59,7 @@ fn no_rule() {
     let result = Command::new(exe)
         .current_dir(ws.path().join("src"))
         .arg("--rules")
-        .arg("comment")
+        .arg("")
         .arg(&lcov1)
         .output()
         .unwrap();
