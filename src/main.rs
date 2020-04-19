@@ -46,7 +46,7 @@ fn run() -> Result<(), Error> {
             }
             CoverageFixer::with_rules(rules)
         }
-        None => CoverageFixer::new(),
+        None => CoverageFixer::default(),
     };
 
     debugln!("Reading data file {:?}", options.input_file);
