@@ -165,18 +165,19 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
     fn visit_expr_for_loop(&mut self, expr: &'ast ExprForLoop) {
         let line = expr.for_token.span.start().line;
 
-        let entry = self.it.nth(line - self.current_line - 1).unwrap();
-        self.current_line = line;
+        if let Some(entry) = self.it.nth(line - self.current_line - 1) {
+            self.current_line = line;
 
-        let should_be_fixed = entry
-            .line_cov
-            .map_or(false, |v| v.count.map_or(false, |c| c > 0));
+            let should_be_fixed = entry
+                .line_cov
+                .map_or(false, |v| v.count.map_or(false, |c| c > 0));
 
-        if should_be_fixed {
-            for branch_cov in entry.branch_covs {
-                if branch_cov.taken == Some(false) {
-                    branch_cov.taken = None;
-                    break;
+            if should_be_fixed {
+                for branch_cov in entry.branch_covs {
+                    if branch_cov.taken == Some(false) {
+                        branch_cov.taken = None;
+                        break;
+                    }
                 }
             }
         }
