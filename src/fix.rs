@@ -36,12 +36,8 @@ impl CoverageFixer {
 
         debugln!("Fixing package coverage");
         for file_cov in &mut data.file_coverages {
-            file_cov
-                .line_coverages
-                .sort_unstable_by_key(|v| v.line_number);
-            file_cov
-                .branch_coverages
-                .sort_unstable_by_key(|v| v.line_number);
+            file_cov.line_coverages.sort_by_key(|v| v.line_number);
+            file_cov.branch_coverages.sort_by_key(|v| v.line_number);
 
             let path = file_cov.path();
             debugln!("Processing file {:?}", path);

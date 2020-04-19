@@ -168,10 +168,6 @@ impl LcovParser {
             "LH" => Some(RawData::LH(contents.next()?.parse().ok()?)),
             "BRDA" => {
                 let line = contents.next()?.parse().ok()?;
-                if line == 0 {
-                    return None;
-                }
-
                 let block = contents.next()?.parse().ok()?;
                 let branch = contents.next()?.parse().ok()?;
                 let taken = contents.next()? != "-";
