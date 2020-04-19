@@ -132,6 +132,8 @@ impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
                 }
             }
         }
+
+        syn::visit::visit_item_mod(self, item);
     }
 }
 
@@ -163,21 +165,24 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
     fn visit_expr_for_loop(&mut self, expr: &'ast ExprForLoop) {
         let line = expr.for_token.span.start().line;
 
-        let entry = self.it.nth(line - self.current_line - 1).unwrap();
-        self.current_line = line;
+        if let Some(entry) = self.it.nth(line - self.current_line - 1) {
+            self.current_line = line;
 
-        let should_be_fixed = entry
-            .line_cov
-            .map_or(false, |v| v.count.map_or(false, |c| c > 0));
+            let should_be_fixed = entry
+                .line_cov
+                .map_or(false, |v| v.count.map_or(false, |c| c > 0));
 
-        if should_be_fixed {
-            for branch_cov in entry.branch_covs {
-                if branch_cov.taken == Some(false) {
-                    branch_cov.taken = None;
-                    break;
+            if should_be_fixed {
+                for branch_cov in entry.branch_covs {
+                    if branch_cov.taken == Some(false) {
+                        branch_cov.taken = None;
+                        break;
+                    }
                 }
             }
         }
+
+        syn::visit::visit_expr_for_loop(self, expr);
     }
 }
 
@@ -240,6 +245,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                return;
             }
         }
     }
@@ -254,6 +260,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                break;
             }
         }
     }
@@ -268,6 +275,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                break;
             }
         }
     }
