@@ -46,16 +46,9 @@ impl CoverageFixer {
             let path = file_cov.path();
             debugln!("Processing file {:?}", path);
 
-            let source = match SourceCode::new(path) {
-                Ok(s) => s,
-                Err(e) => {
-                    warnln!("{:?}", e);
-                    warnln!("Failed to open source code. Skipping...");
-                    continue;
-                }
-            };
+            let source = SourceCode::new(path)?;
 
-            for rule in &self.rules {
+            for rule in self.rules.iter() {
                 rule.fix_file_coverage(&source, file_cov);
             }
 

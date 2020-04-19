@@ -17,7 +17,7 @@ pub struct SourceCode {
 impl SourceCode {
     pub fn new(filename: &Path) -> Result<SourceCode, Error> {
         let content = fs::read_to_string(filename)
-            .chain_err(|| format!("Failed to open source file: {:?}", filename))?;
+            .chain_err(|| ErrorKind::SourceFileNotFound(filename.to_owned()))?;
         let ast =
             syn::parse_file(&content).chain_err(|| format!("Failed to parse {:?}", filename))?;
         Ok(SourceCode { content, ast })

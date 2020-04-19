@@ -1,4 +1,3 @@
-use error_chain::bail;
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
 
@@ -100,9 +99,6 @@ impl CoverageReader for LcovParser {
                 }
                 RawData::EndOfRecord => {
                     let filepath = self.root.join(&filename);
-                    if !filepath.is_file() {
-                        bail!(ErrorKind::SourceFileNotFound(filepath));
-                    }
 
                     let file_coverage = FileCoverage::new(
                         filepath,
