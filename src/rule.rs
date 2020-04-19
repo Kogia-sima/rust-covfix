@@ -132,6 +132,8 @@ impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
                 }
             }
         }
+
+        syn::visit::visit_item_mod(self, item);
     }
 }
 
@@ -178,6 +180,8 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
                 }
             }
         }
+
+        syn::visit::visit_expr_for_loop(self, expr);
     }
 }
 
@@ -240,6 +244,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                return;
             }
         }
     }
@@ -254,6 +259,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                break;
             }
         }
     }
@@ -268,6 +274,7 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
         for attr in item.attrs.iter() {
             if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "derive" {
                 self.ignore_range(start, end);
+                break;
             }
         }
     }
