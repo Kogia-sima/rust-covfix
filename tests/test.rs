@@ -67,4 +67,5 @@ mod fix;
 mod guess_game;
 mod invalid_operations;
 mod read_lcov;
+mod workspace;
 mod write_lcov;
