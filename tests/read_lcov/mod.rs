@@ -17,35 +17,35 @@ fn simple() {
             ws.path().join("src/main.rs"),
             vec![
                 LineCoverage {
-                    line_number: 2,
+                    line_number: 3,
                     count: Some(1),
                 },
                 LineCoverage {
-                    line_number: 3,
+                    line_number: 4,
                     count: Some(6),
                 },
                 LineCoverage {
-                    line_number: 4,
+                    line_number: 5,
                     count: Some(5),
                 },
                 LineCoverage {
-                    line_number: 6,
+                    line_number: 7,
                     count: Some(1),
                 },
             ],
             vec![
                 BranchCoverage {
-                    line_number: 3,
+                    line_number: 4,
                     block_number: Some(0),
                     taken: Some(true),
                 },
                 BranchCoverage {
-                    line_number: 3,
+                    line_number: 4,
                     block_number: Some(0),
                     taken: Some(false),
                 },
                 BranchCoverage {
-                    line_number: 3,
+                    line_number: 4,
                     block_number: Some(0),
                     taken: Some(true),
                 },
@@ -55,15 +55,15 @@ fn simple() {
             ws.path().join("src/sub.rs"),
             vec![
                 LineCoverage {
-                    line_number: 0,
-                    count: Some(5),
-                },
-                LineCoverage {
                     line_number: 1,
                     count: Some(5),
                 },
                 LineCoverage {
                     line_number: 2,
+                    count: Some(5),
+                },
+                LineCoverage {
+                    line_number: 3,
                     count: Some(5),
                 },
             ],

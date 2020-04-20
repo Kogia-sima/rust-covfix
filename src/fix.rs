@@ -1,8 +1,6 @@
-use std::fs;
-
 use crate::coverage::{PackageCoverage, TotalCoverage};
 use crate::error::*;
-use crate::rule::{default_rules, Rule};
+use crate::rule::{default_rules, Rule, SourceCode};
 
 /// Fix coverage information based on source code
 ///
@@ -14,14 +12,14 @@ pub struct CoverageFixer {
 }
 
 impl CoverageFixer {
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self {
             rules: default_rules(),
         }
     }
 
-    #[cfg_attr(not(feature = "noinline"), inline)]
+    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn with_rules<I: Into<Vec<Box<dyn Rule>>>>(rules: I) -> Self {
         Self {
             rules: rules.into(),
@@ -37,22 +35,17 @@ impl CoverageFixer {
         let old = CoverageSummary::new(data);
 
         debugln!("Fixing package coverage");
-        for mut file_cov in &mut data.file_coverages {
-            file_cov
-                .line_coverages
-                .sort_unstable_by_key(|v| v.line_number);
-            file_cov
-                .branch_coverages
-                .sort_unstable_by_key(|v| v.line_number);
+        for file_cov in &mut data.file_coverages {
+            file_cov.line_coverages.sort_by_key(|v| v.line_number);
+            file_cov.branch_coverages.sort_by_key(|v| v.line_number);
 
             let path = file_cov.path();
             debugln!("Processing file {:?}", path);
 
-            let source = fs::read_to_string(path)
-                .chain_err(|| format!("Failed to open source file: {:?}", path))?;
+            let source = SourceCode::new(path)?;
 
-            for rule in &self.rules {
-                rule.fix_file_coverage(&source, &mut file_cov);
+            for rule in self.rules.iter() {
+                rule.fix_file_coverage(&source, file_cov);
             }
 
             file_cov.line_coverages.retain(|v| v.count.is_some());
@@ -88,6 +81,7 @@ impl CoverageFixer {
 }
 
 impl Default for CoverageFixer {
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn default() -> Self {
         Self::new()
     }
@@ -101,6 +95,7 @@ struct CoverageSummary {
 }
 
 impl CoverageSummary {
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn new(data: &PackageCoverage) -> Self {
         Self {
             line_executed: data.line_executed(),
@@ -110,10 +105,12 @@ impl CoverageSummary {
         }
     }
 
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn line_percent(&self) -> f64 {
         (self.line_executed as f64) / (self.line_total as f64) * 100.0
     }
 
+    #[cfg_attr(feature = "noinline", inline(never))]
     fn branch_percent(&self) -> f64 {
         (self.branch_executed as f64) / (self.branch_total as f64) * 100.0
     }

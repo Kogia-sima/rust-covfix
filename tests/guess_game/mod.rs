@@ -59,7 +59,7 @@ fn no_rule() {
     let result = Command::new(exe)
         .current_dir(ws.path().join("src"))
         .arg("--rules")
-        .arg("comment")
+        .arg("")
         .arg(&lcov1)
         .output()
         .unwrap();
@@ -129,6 +129,8 @@ fn verbose() {
     let result = Command::new(exe)
         .current_dir(ws.path())
         .arg("-v")
+        .arg("--rules")
+        .arg("close,test,loop,derive,comment")
         .arg(&lcov1)
         .stdout(Stdio::null())
         .stderr(Stdio::null())

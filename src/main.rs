@@ -41,12 +41,12 @@ fn run() -> Result<(), Error> {
     let fixer = match options.rules {
         Some(ref rule_str) => {
             let mut rules = vec![];
-            for segment in rule_str.split(',') {
+            for segment in rule_str.split(',').filter(|v| !v.is_empty()) {
                 rules.push(rule::from_str(segment)?);
             }
             CoverageFixer::with_rules(rules)
         }
-        None => CoverageFixer::new(),
+        None => CoverageFixer::default(),
     };
 
     debugln!("Reading data file {:?}", options.input_file);

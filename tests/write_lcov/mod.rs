@@ -15,49 +15,49 @@ fn test() {
                 ws.path().join("src/lib.rs"),
                 vec![
                     LineCoverage {
-                        line_number: 1,
-                        count: Some(2),
-                    },
-                    LineCoverage {
                         line_number: 2,
                         count: Some(2),
                     },
                     LineCoverage {
-                        line_number: 7,
-                        count: Some(1),
+                        line_number: 3,
+                        count: Some(2),
                     },
                     LineCoverage {
                         line_number: 8,
-                        count: Some(4),
+                        count: Some(1),
                     },
                     LineCoverage {
                         line_number: 9,
+                        count: Some(4),
+                    },
+                    LineCoverage {
+                        line_number: 10,
                         count: Some(1),
                     },
                 ],
                 vec![
                     BranchCoverage {
-                        line_number: 2,
+                        line_number: 3,
                         block_number: Some(0),
                         taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: 2,
+                        line_number: 3,
                         block_number: Some(0),
                         taken: Some(false),
                     },
                     BranchCoverage {
-                        line_number: 2,
+                        line_number: 3,
                         block_number: Some(0),
                         taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: 7,
+                        line_number: 8,
                         block_number: Some(0),
                         taken: Some(true),
                     },
                     BranchCoverage {
-                        line_number: 7,
+                        line_number: 8,
                         block_number: Some(0),
                         taken: Some(false),
                     },
@@ -67,23 +67,23 @@ fn test() {
                 ws.path().join("src/sub.rs"),
                 vec![
                     LineCoverage {
-                        line_number: 0,
+                        line_number: 1,
                         count: Some(1),
                     },
                     LineCoverage {
-                        line_number: 1,
+                        line_number: 2,
                         count: Some(2),
                     },
                     LineCoverage {
-                        line_number: 2,
+                        line_number: 3,
                         count: Some(3),
                     },
                     LineCoverage {
-                        line_number: 8,
+                        line_number: 9,
                         count: Some(0),
                     },
                     LineCoverage {
-                        line_number: 9999,
+                        line_number: 10000,
                         count: Some(3),
                     },
                 ],

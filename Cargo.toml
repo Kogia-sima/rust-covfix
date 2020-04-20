@@ -1,6 +1,6 @@
 [package]
 name = "rust-covfix"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Kogia-sima <orcinus4627@gmail.com>"]
 description = "Fix Rust coverage data based on source code"
 homepage = "https://github.com/Kogia-sima/rust-covfix"
@@ -31,12 +31,22 @@ backtrace = ["error-chain/backtrace"]
 
 [dependencies]
 argparse = { version = "0.2.2", optional = true }
-error-chain = { version = "0.12.1", default-features = false }
+error-chain = { version = "0.12.2", default-features = false }
 
 [dependencies.regex]
-version = "1.3.1"
+version = "1.3.6"
 default-features = false
 features = ["std", "unicode-perl", "perf-dfa", "perf-inline"]
+
+[dependencies.syn]
+version = "1.0.17"
+default-features = false
+features = ["parsing", "visit", "full"]
+
+[dependencies.proc-macro2]
+version = "1.0.10"
+default-features = false
+features = ["span-locations"]
 
 [dev-dependencies]
 tempfile = "3.1.0"

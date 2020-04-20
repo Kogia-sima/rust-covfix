@@ -2,7 +2,7 @@ use super::WorkSpace;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use rust_covfix::{error::ErrorKind, parser::LcovParser, CoverageReader};
+use rust_covfix::{error::ErrorKind, parser::LcovParser, CoverageFixer, CoverageReader};
 
 #[test]
 fn root_is_not_a_dir() {
@@ -51,7 +51,10 @@ fn source_file_not_found() {
     let ws = WorkSpace::from_template("tests/invalid_operations");
 
     let parser = LcovParser::new(ws.path());
-    let result = parser.read_from_file(&ws.path().join("lcov.info"));
+    let fixer = CoverageFixer::default();
+
+    let mut cov = parser.read_from_file(&ws.path().join("lcov.info")).unwrap();
+    let result = fixer.fix(&mut cov);
 
     assert_matches!(result, Err(_));
     assert_matches!(result.unwrap_err().kind(), ErrorKind::SourceFileNotFound(_));

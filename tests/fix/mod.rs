@@ -40,26 +40,26 @@ fn closing_brackets() {
     let source_file = ws.path().join("closing_brackets.rs");
 
     let original_line_covs = line_coverages!(
-        0 => 1,
         1 => 1,
         2 => 1,
         3 => 1,
         4 => 1,
-        5 => 0,
+        5 => 1,
         6 => 0,
         7 => 0,
-        9 => 0,
+        8 => 0,
         10 => 0,
+        11 => 0,
     );
 
     let expected_line_covs = line_coverages!(
-        0 => 1,
         1 => 1,
         2 => 1,
         3 => 1,
         4 => 1,
-        5 => 0,
-        7 => 0,
+        5 => 1,
+        6 => 0,
+        8 => 0,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
@@ -83,34 +83,54 @@ fn tests_mod() {
     let source_file = ws.path().join("tests_mod.rs");
 
     let original_line_covs = line_coverages!(
-        0 => 1,
         1 => 1,
         2 => 1,
-        11 => 1,
+        3 => 1,
         12 => 1,
-        20 => 1,
+        13 => 1,
         21 => 1,
-        25 => 1,
+        22 => 1,
         26 => 1,
-        30 => 1,
-        32 => 1,
+        27 => 1,
+        31 => 1,
+        33 => 1,
+        38 => 1,
+        39 => 1,
+    );
+
+    let original_branch_covs = branch_coverages!(
+        13 => true,
+        13 => false,
+        22 => true,
+        22 => false,
+        39 => true,
+        39 => false,
     );
 
     let expected_line_covs = line_coverages!(
-        0 => 1,
         1 => 1,
-        20 => 1,
+        2 => 1,
         21 => 1,
-        25 => 1,
+        22 => 1,
         26 => 1,
-        30 => 1,
-        32 => 1,
+        27 => 1,
+        31 => 1,
+        33 => 1,
+        38 => 1,
+        39 => 1,
+    );
+
+    let expected_branch_covs = branch_coverages!(
+        22 => true,
+        22 => false,
+        39 => true,
+        39 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
         &source_file,
         original_line_covs,
-        vec![],
+        original_branch_covs,
     )]);
 
     let fixer = CoverageFixer::new();
@@ -119,6 +139,11 @@ fn tests_mod() {
     assert_eq!(
         coverage.file_coverages()[0].line_coverages(),
         &*expected_line_covs
+    );
+
+    assert_eq!(
+        coverage.file_coverages()[0].branch_coverages(),
+        &*expected_branch_covs
     );
 }
 
@@ -128,54 +153,64 @@ fn derives() {
     let source_file = ws.path().join("derives.rs");
 
     let original_line_covs = line_coverages!(
-        0 => 0,
-        2 => 0,
+        1 => 0,
         3 => 0,
-        7 => 0,
+        4 => 0,
         8 => 0,
         9 => 0,
         10 => 0,
-        12 => 0,
-        15 => 0,
+        11 => 0,
+        13 => 0,
         16 => 0,
-        19 => 0,
+        17 => 0,
         20 => 0,
         21 => 0,
-        23 => 0,
+        22 => 0,
         24 => 0,
         25 => 0,
-        27 => 0,
+        26 => 0,
         28 => 0,
         29 => 0,
-        32 => 0,
+        30 => 0,
         33 => 0,
         34 => 0,
         35 => 0,
         36 => 0,
-        40 => 0,
+        37 => 0,
         41 => 0,
         42 => 0,
+        43 => 0,
+        46 => 0,
+        47 => 0,
+        48 => 0,
+        49 => 0,
+        52 => 0,
+        53 => 0,
+    );
+
+    let original_branch_covs = branch_coverages!(
+        17 => false,
     );
 
     let expected_line_covs = line_coverages!(
-        7 => 0,
         8 => 0,
         9 => 0,
         10 => 0,
-        19 => 0,
+        11 => 0,
         20 => 0,
-        23 => 0,
+        21 => 0,
         24 => 0,
-        27 => 0,
+        25 => 0,
         28 => 0,
-        40 => 0,
+        29 => 0,
         41 => 0,
+        42 => 0,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
         &source_file,
         original_line_covs,
-        vec![],
+        original_branch_covs,
     )]);
 
     let fixer = CoverageFixer::new();
@@ -185,6 +220,8 @@ fn derives() {
         coverage.file_coverages()[0].line_coverages(),
         &*expected_line_covs
     );
+
+    assert_eq!(coverage.file_coverages()[0].branch_coverages(), &[]);
 }
 
 #[test]
@@ -193,52 +230,52 @@ fn comments() {
     let source_file = ws.path().join("comments.rs");
 
     let original_line_covs = line_coverages!(
-        0 => 1,
         1 => 1,
-        4 => 1,
+        2 => 1,
         5 => 1,
-        9 => 1,
+        6 => 1,
         10 => 1,
-        11 => 0,
+        11 => 1,
         12 => 0,
-        17 => 1,
-        20 => 1,
-        22 => 1,
+        13 => 0,
+        18 => 1,
+        21 => 1,
+        23 => 1,
     );
 
     let original_branch_covs = branch_coverages!(
-        4 => true,
-        4 => false,
-        9 => true,
-        9 => false,
+        5 => true,
+        5 => false,
         10 => true,
         10 => false,
-        11 => false,
+        11 => true,
         11 => false,
         12 => false,
         12 => false,
-        17 => true,
-        17 => false,
-        20 => true,
-        20 => false,
+        13 => false,
+        13 => false,
+        18 => true,
+        18 => false,
+        21 => true,
+        21 => false,
     );
 
     let expected_line_covs = line_coverages!(
-        0 => 1,
-        4 => 1,
+        1 => 1,
         5 => 1,
-        20 => 1
+        6 => 1,
+        21 => 1
     );
 
     let expected_branch_covs = branch_coverages!(
-        9 => true,
-        9 => false,
         10 => true,
         10 => false,
-        11 => false,
+        11 => true,
         11 => false,
         12 => false,
         12 => false,
+        13 => false,
+        13 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
@@ -267,44 +304,44 @@ fn loops() {
     let source_file = ws.path().join("loops.rs");
 
     let original_line_covs = line_coverages!(
-        0 => 1,
-        1 => 11,
-        2 => 10,
-        6 => 1,
+        1 => 1,
+        2 => 11,
+        3 => 10,
         7 => 1,
-        10 => 1,
-        13 => 11,
-        14 => 10,
-        21 => 0,
-        22 => 0
+        8 => 1,
+        11 => 1,
+        14 => 11,
+        15 => 10,
+        22 => 0,
+        23 => 0
     );
 
     let original_branch_covs = branch_coverages!(
-        1 => true,
-        1 => true,
-        1 => false,
-        13 => true,
-        13 => true
+        2 => true,
+        2 => true,
+        2 => false,
+        14 => true,
+        14 => true
     );
 
     let expected_line_covs = line_coverages!(
-        0 => 1,
-        1 => 11,
-        2 => 10,
-        6 => 1,
+        1 => 1,
+        2 => 11,
+        3 => 10,
         7 => 1,
-        10 => 1,
-        13 => 11,
-        14 => 10,
-        21 => 0,
-        22 => 0
+        8 => 1,
+        11 => 1,
+        14 => 11,
+        15 => 10,
+        22 => 0,
+        23 => 0
     );
 
     let expected_branch_covs = branch_coverages!(
-        1 => true,
-        1 => true,
-        13 => true,
-        13 => true
+        2 => true,
+        2 => true,
+        14 => true,
+        14 => true
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
