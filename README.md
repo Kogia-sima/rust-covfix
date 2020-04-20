@@ -15,7 +15,7 @@ Though only `lcov` format is supprted at current, Another formats is going to be
 
 ## Features
 
-- Compatible with latest stable/beta/nightly Rust compiler
+- Compatible with the latest stable/beta/nightly Rust compiler
 - Windows/OSX/Linux are all supprted
 - Lightweight (small dependencies)
 - Fast and safe (implemented in Rust language)
@@ -47,27 +47,123 @@ You can also install via `cargo` command.
 $ cargo install rust-covfix
 ```
 
-## Usage
+## How to generate correct code coverage from Rust program?
+
+#### 1. Avoid inlining the functions (optinal)
+
+It seems that the current version of rustc (1.42) will automatically inline the function that is only called from one place.
+This behaviour causes incorrect coverage for your tests.
+
+To avoid this, you have to add `#[inline(never)]` attributes for their functions manually. I recommend defining a new feature flag `coverage` in your crate. In Cargo.toml, append the following lines.
+
+```Cargo.toml
+[features]
+coverage = []
+```
+
+And then, add the attribute like `#[cfg(coverage, inline(never))]` to the functions which is called from just one location.
+
+```rust
+#[cfg(coverage, inline(never))]
+fn foo() {
+  // ...
+}
+```
+
+This will avoid inlining the functions only when you enable `coverage` feature flag.
+
+#### 2. Compile your crate with `-Zprofile` option
+
+In order to generate code coverage with rustc, you must specify `-Zprofile` option.
+This option is currently (1.42) unstable and only available from nightly toolchain.
+
+Also, some other flags will be required to generate **correct** coverage. Here is my recommend.
 
 ```console
-$ rust-covfix --help
-Usage:
-  rust-covfix [OPTIONS] FILE
+$ export CARGO_INCREMENTAL=0
+$ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
+```
 
-Rust coverage fixer
+Then, compile your crate and run tests.
 
-Positional arguments:
-  file                  coverage file
+```console
+$ cargo test --features coverage
+```
 
-Optional arguments:
-  -h,--help             Show this help message and exit
-  -V,--version          display version
-  -v,--verbose          verbose output
-  -n,--no-fix           do not fix coverage
-  -o,--output FILE      output file name (default: stdout)
-  --root DIR            project root directory
-  --rules STR[,STR..]   use specified rules to fix coverages. Valid names are
-                        [close, test, loop, derive]
+#### 3. aggregate code coverage data
+
+Now there are code coverage data in `target/debug/deps` directory.
+The next step is aggregating them and convert the format so that `rust-covfix` can read coverage data.
+
+I highly recommend to use [grcov](https://github.com/mozilla/grcov/) to aggregate them. This project is developed by mozilla team and supports the latest Rust toolchains.
+
+Install latest `grcov` and run the following commands from your project root directory.
+
+```console
+zip -0 ccov.zip `find . \( -name "YOUR_PROJECT_NAME*.gc*" -o -name "test-*.gc*" \) -print`
+./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*" -o lcov.info
+```
+
+where `YOUR_PROJECT_NAME` is your crate name specified in `Cargo.toml`.
+
+#### 4. Fix coverage data using rust-covfix
+
+Now rust-covfix can read coverage from `lcov.info`.
+
+```console
+$ rust-covfix -o lcov_correct.info lcov.info
+```
+
+This command will write a **correct** coverage into `lcov_correct.info`. You can upload them into codecov.io, or generate HTML summary using `genhtml`.
+
+#### Use rust-covfix on Travis CI
+
+Here is an example script to use `rust-covfix` on Travis CI environment.
+
+```sh
+#!/bin/bash
+# ci/script.sh
+
+set -ex
+
+if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
+  # Setup grcov
+  wget https://github.com/mozilla/grcov/releases/download/v0.5.7/grcov-linux-x86_64.tar.bz2
+  tar xvf grcov-linux-x86_64.tar.bz2
+
+  # Setup environmental variables
+  export CARGO_INCREMENTAL=0
+  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
+fi
+
+# Compile and run tests
+cargo test $CARGO_OPTIONS
+
+if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
+  # collect coverages
+  zip -0 ccov.zip `find . \( -name "rust_covfix*.gc*" -o -name "test-*.gc*" \) -print`
+  ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*" -o lcov.info
+
+  # fix coverage using rust-covfix
+  rust-covfix lcov.info -o lcov.info
+
+  # upload coverage to codecov
+  bash <(curl -s https://codecov.io/bash) -f lcov.info
+fi
+```
+
+Then, call this script from `travis.yml`
+
+```yaml
+language: rust
+
+matrix:
+  include:
+    - os: linux
+      rust: nightly
+
+script:
+  - bash ci/script.sh
 ```
 
 ## How is the incorrect line coverage detected
