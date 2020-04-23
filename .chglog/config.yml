@@ -1,0 +1,29 @@
+style: github
+template: CHANGELOG.tpl.md
+info:
+  title: CHANGELOG
+  repository_url: https://github.com/Kogia-sima/rust-covfix
+options:
+  commits:
+    filters:
+      Type:
+        - break
+        - feat
+        - fix
+
+  commit_groups:
+    title_maps:
+      break: Breaking Changes
+      feat: Features
+      fix: Bug Fixes
+
+  header:
+    pattern: "^(\\w*)\\:\\s(.*)$"
+    pattern_maps:
+      - Type
+      - Subject
+
+  merges:
+    pattern: "^Merge pull request #(\\d+)"
+    pattern_maps:
+      - Source
