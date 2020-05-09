@@ -92,10 +92,10 @@ fn tests_mod() {
         22 => 1,
         26 => 1,
         27 => 1,
-        31 => 1,
         33 => 1,
-        38 => 1,
+        34 => 1,
         39 => 1,
+        40 => 1,
     );
 
     let original_branch_covs = branch_coverages!(
@@ -103,8 +103,8 @@ fn tests_mod() {
         13 => false,
         22 => true,
         22 => false,
-        39 => true,
-        39 => false,
+        40 => true,
+        40 => false,
     );
 
     let expected_line_covs = line_coverages!(
@@ -114,17 +114,15 @@ fn tests_mod() {
         22 => 1,
         26 => 1,
         27 => 1,
-        31 => 1,
-        33 => 1,
-        38 => 1,
         39 => 1,
+        40 => 1,
     );
 
     let expected_branch_covs = branch_coverages!(
         22 => true,
         22 => false,
-        39 => true,
-        39 => false,
+        40 => true,
+        40 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
