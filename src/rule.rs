@@ -1,10 +1,10 @@
-use proc_macro2::{Span, TokenTree};
+use proc_macro2::TokenTree;
 use regex::Regex;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
 use syn::visit::Visit;
-use syn::{ExprForLoop, Fields, File, ItemEnum, ItemMod, ItemStruct, ItemUnion};
+use syn::{ExprForLoop, Fields, File, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion};
 
 use crate::error::*;
 use crate::{BranchCoverage, FileCoverage, LineCoverage};
@@ -83,13 +83,13 @@ struct TestRuleInner<'a> {
 }
 
 impl<'a> TestRuleInner<'a> {
-    fn ignore_range(&mut self, span: Span) {
+    fn ignore_range(&mut self, start: usize, end: usize) {
         for line_cov in self
             .file_cov
             .line_coverages
             .iter_mut()
-            .skip_while(|e| e.line_number < span.start().line)
-            .take_while(|e| e.line_number <= span.end().line)
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
         {
             line_cov.count = None;
         }
@@ -98,8 +98,8 @@ impl<'a> TestRuleInner<'a> {
             .file_cov
             .branch_coverages
             .iter_mut()
-            .skip_while(|e| e.line_number < span.start().line)
-            .take_while(|e| e.line_number <= span.end().line)
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
         {
             branch_cov.taken = None;
         }
@@ -107,6 +107,23 @@ impl<'a> TestRuleInner<'a> {
 }
 
 impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
+    fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+        let start = match item.attrs.get(0) {
+            Some(attr) => attr.pound_token.spans[0].start().line,
+            None => return,
+        };
+        let end = item.block.brace_token.span.end().line;
+
+        for attr in item.attrs.iter() {
+            if attr.path.segments.len() == 1 && attr.path.segments[0].ident == "test" {
+                self.ignore_range(start, end);
+                return;
+            }
+        }
+
+        syn::visit::visit_item_fn(self, item);
+    }
+
     fn visit_item_mod(&mut self, item: &'ast ItemMod) {
         let span = match item.content {
             Some((ref brace, _)) => brace.span,
@@ -124,7 +141,7 @@ impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
 
                         if let TokenTree::Ident(ident) = token {
                             if ident == "test" {
-                                self.ignore_range(span);
+                                self.ignore_range(span.start().line, span.end().line);
                                 return;
                             }
                         }
