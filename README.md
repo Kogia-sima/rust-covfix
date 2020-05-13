@@ -34,7 +34,7 @@ $ cargo install --no-default-features --features "cli lcov"
 |:--:|--|:--:|
 |cli|Command Line Interface. This feature is required to build `rust-covfix` executable.|yes|
 |lcov|Make LcovParser available|yes|
-|noinline|Avoid adding `#cfg[inline]` attribute on function.|no|
+|noinline|Avoid adding `#cfg[inline]` attribute on function. (deprecated)|no|
 |backtrace|Dump backtrace information on every time the error has occured.|no|
 
 ## Install
