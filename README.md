@@ -81,7 +81,7 @@ Also, some other flags will be required to generate **correct** coverage. Here i
 
 ```console
 $ export CARGO_INCREMENTAL=0
-$ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
+$ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -C panic=abort"
 ```
 
 Then, compile your crate and run tests.
@@ -133,7 +133,7 @@ if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
 
   # Setup environmental variables
   export CARGO_INCREMENTAL=0
-  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
+  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -C panic=abort"
 fi
 
 # Compile and run tests
