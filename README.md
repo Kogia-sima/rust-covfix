@@ -81,7 +81,7 @@ Also, some other flags will be required to generate **correct** coverage. Here i
 
 ```console
 $ export CARGO_INCREMENTAL=0
-$ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
+$ export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads -Zmir-opt-level=0"
 ```
 
 Then, compile your crate and run tests.

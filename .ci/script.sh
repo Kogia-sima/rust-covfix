@@ -4,7 +4,7 @@ set -ex
 
 if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
   export CARGO_INCREMENTAL=0
-  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Clink-dead-code -Coverflow-checks=off -Copt-level=0 -Zmir-opt-level=0"
+  export RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
   export CARGO_OPTIONS="--all-features"
 
   wget https://github.com/mozilla/grcov/releases/download/v0.5.7/grcov-linux-x86_64.tar.bz2
