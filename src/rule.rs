@@ -33,7 +33,6 @@ pub struct CloseBlockRule {
 }
 
 impl CloseBlockRule {
-    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self {
             reg: Regex::new(
@@ -65,7 +64,6 @@ impl Rule for CloseBlockRule {
 pub struct TestRule;
 
 impl TestRule {
-    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self
     }
@@ -157,7 +155,6 @@ impl<'ast, 'a> Visit<'ast> for TestRuleInner<'a> {
 pub struct LoopRule;
 
 impl LoopRule {
-    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self
     }
@@ -206,7 +203,6 @@ impl<'ast, 'a, 'b> Visit<'ast> for LoopRuleInner<'a, 'b> {
 pub struct DeriveRule;
 
 impl DeriveRule {
-    #[cfg_attr(feature = "noinline", inline(never))]
     pub fn new() -> Self {
         Self
     }
@@ -301,7 +297,6 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
 pub struct CommentRule;
 
 impl CommentRule {
-    #[cfg_attr(feature = "noinline", inline(never))]
     fn new() -> Self {
         Self
     }
@@ -385,7 +380,6 @@ impl Rule for CommentRule {
     }
 }
 
-#[cfg_attr(feature = "noinline", inline(never))]
 pub fn default_rules() -> Vec<Box<dyn Rule>> {
     vec![
         Box::new(CloseBlockRule::new()),
