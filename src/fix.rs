@@ -81,7 +81,6 @@ impl CoverageFixer {
 }
 
 impl Default for CoverageFixer {
-    #[cfg_attr(feature = "noinline", inline(never))]
     fn default() -> Self {
         Self::new()
     }
