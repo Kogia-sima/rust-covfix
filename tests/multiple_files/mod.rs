@@ -40,3 +40,33 @@ fn all_rules() {
     let content = fs::read_to_string(lcov3).unwrap();
     assert_eq!(content, expected_content);
 }
+
+#[test]
+fn invalid() {
+    let ws = WorkSpace::from_template("tests/multiple_files");
+
+    let lcov = ws.path().join("lcov_invalid.info");
+
+    let mut exe = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if cfg!(windows) {
+        exe.push("target\\debug\\rust-covfix");
+    } else {
+        exe.push("target/debug/rust-covfix");
+    }
+
+    let result = Command::new(exe)
+        .current_dir(ws.path().join("src"))
+        .arg(&lcov)
+        .output()
+        .unwrap();
+
+    assert!(!result.status.success());
+    assert_eq!(
+        String::from_utf8(result.stderr)
+            .unwrap()
+            .lines()
+            .next()
+            .unwrap(),
+        "Error: Failed to fix coverage"
+    );
+}
