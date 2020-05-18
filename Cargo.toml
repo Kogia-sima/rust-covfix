@@ -1,6 +1,6 @@
 [package]
 name = "rust-covfix"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Kogia-sima <orcinus4627@gmail.com>"]
 description = "Fix Rust coverage data based on source code"
 homepage = "https://github.com/Kogia-sima/rust-covfix"

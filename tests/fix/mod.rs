@@ -92,10 +92,10 @@ fn tests_mod() {
         22 => 1,
         26 => 1,
         27 => 1,
-        31 => 1,
         33 => 1,
-        38 => 1,
+        34 => 1,
         39 => 1,
+        40 => 1,
     );
 
     let original_branch_covs = branch_coverages!(
@@ -103,8 +103,8 @@ fn tests_mod() {
         13 => false,
         22 => true,
         22 => false,
-        39 => true,
-        39 => false,
+        40 => true,
+        40 => false,
     );
 
     let expected_line_covs = line_coverages!(
@@ -114,17 +114,15 @@ fn tests_mod() {
         22 => 1,
         26 => 1,
         27 => 1,
-        31 => 1,
-        33 => 1,
-        38 => 1,
         39 => 1,
+        40 => 1,
     );
 
     let expected_branch_covs = branch_coverages!(
         22 => true,
         22 => false,
-        39 => true,
-        39 => false,
+        40 => true,
+        40 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
@@ -342,6 +340,70 @@ fn loops() {
         2 => true,
         14 => true,
         14 => true
+    );
+
+    let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
+        &source_file,
+        original_line_covs,
+        original_branch_covs,
+    )]);
+
+    let fixer = CoverageFixer::new();
+    fixer.fix(&mut coverage).unwrap();
+
+    assert_eq!(
+        coverage.file_coverages()[0].line_coverages(),
+        &*expected_line_covs
+    );
+
+    assert_eq!(
+        coverage.file_coverages()[0].branch_coverages(),
+        &*expected_branch_covs
+    );
+}
+
+#[test]
+fn unreachable() {
+    let ws = WorkSpace::from_template("./tests/fix");
+    let source_file = ws.path().join("unreachable.rs");
+
+    let original_line_covs = line_coverages!(
+        6 => 1,
+        7 => 1,
+        8 => 1,
+        9 => 1,
+        10 => 1,
+        12 => 1,
+        16 => 1,
+        17 => 1,
+        18 => 0,
+        19 => 1,
+        20 => 1,
+        22 => 1,
+    );
+
+    let original_branch_covs = branch_coverages!(
+        7 => true,
+        7 => true,
+        17 => true,
+        17 => false,
+    );
+
+    let expected_line_covs = line_coverages!(
+        6 => 1,
+        7 => 1,
+        8 => 1,
+        10 => 1,
+        16 => 1,
+        17 => 1,
+        20 => 1,
+    );
+
+    let expected_branch_covs = branch_coverages!(
+        7 => true,
+        7 => true,
+        17 => true,
+        17 => false,
     );
 
     let mut coverage = PackageCoverage::new(vec![FileCoverage::new(

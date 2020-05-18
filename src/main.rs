@@ -6,7 +6,7 @@ use error_chain::{bail, ChainedError};
 use std::env;
 use std::io::BufWriter;
 use std::path::PathBuf;
-use std::process;
+use std::process::{self, Command};
 
 use rust_covfix::error::*;
 use rust_covfix::rule;
@@ -151,6 +151,11 @@ impl Arguments {
 }
 
 fn find_root_dir() -> Option<PathBuf> {
+    if let Some(mut target_dir) = find_cargo_target_dir() {
+        target_dir.pop();
+        return Some(target_dir);
+    }
+
     let mut path = env::current_dir().expect("cannot detect the current directory.");
     path.push("target");
 
@@ -173,4 +178,16 @@ fn find_root_dir() -> Option<PathBuf> {
     }
 
     None
+}
+
+fn find_cargo_target_dir() -> Option<PathBuf> {
+    let output = Command::new("cargo")
+        .args(&["metadata", "--format-version", "1"])
+        .output()
+        .ok()?;
+
+    let stdout = unsafe { String::from_utf8_unchecked(output.stdout) };
+    let start = stdout.rfind("\"target_directory\":")? + 20;
+    let end = start + stdout[start..].find("\"")?;
+    Some(PathBuf::from(&stdout[start..end]))
 }

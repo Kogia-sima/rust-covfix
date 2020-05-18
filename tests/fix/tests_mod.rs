@@ -26,11 +26,12 @@ mod tests {
 fn function_for_test() -> i32 {
     let mut a = 1;
 
-    // this line should be ignored
-    #[cfg(test)]
-    a += 1;
-
     return a;
+}
+
+#[test]
+fn foo() {
+    println!("foo");
 }
 
 #[cfg(not(test))]
