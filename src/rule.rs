@@ -27,7 +27,7 @@ impl SourceCode {
     }
 }
 
-pub trait Rule {
+pub trait Rule: Send + Sync {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage);
 }
 
