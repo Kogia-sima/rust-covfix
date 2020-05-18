@@ -38,7 +38,7 @@ fn run() -> Result<(), Error> {
 
     let parser = LcovParser::new(root_dir);
 
-    let fixer = match options.rules {
+    let mut fixer = match options.rules {
         Some(ref rule_str) => {
             let mut rules = vec![];
             for segment in rule_str.split(',').filter(|v| !v.is_empty()) {
@@ -48,6 +48,7 @@ fn run() -> Result<(), Error> {
         }
         None => CoverageFixer::default(),
     };
+    fixer.set_num_threads(options.num_threads);
 
     debugln!("Reading data file {:?}", options.input_file);
 
