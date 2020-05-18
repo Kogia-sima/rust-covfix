@@ -86,9 +86,9 @@ impl CoverageFixer {
         debugln!("Fixing package coverage");
 
         let mut pool = Pool::new(self.num_threads as u32);
+        let (tx, rx) = channel::<Result<(), Error>>();
 
         pool.scoped(|scoped| -> Result<(), Error> {
-            let (tx, rx) = channel::<Result<(), Error>>();
             for file_cov in &mut data.file_coverages {
                 let rules = Arc::clone(&self.rules);
                 let mut task = move || {
