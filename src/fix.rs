@@ -1,5 +1,4 @@
 use std::sync::mpsc::channel;
-use std::sync::Arc;
 
 use crate::coverage::{PackageCoverage, TotalCoverage};
 use crate::error::*;
@@ -11,21 +10,21 @@ use crate::rule::{default_rules, Rule, SourceCode};
 /// Rules require coverage informations to be stored in correct format.
 /// This struct checks the information format and modify it if it is invalid.
 pub struct CoverageFixer {
-    rules: Arc<Vec<Box<dyn Rule>>>,
+    rules: Vec<Box<dyn Rule>>,
     num_threads: usize,
 }
 
 impl CoverageFixer {
     pub fn new() -> Self {
         Self {
-            rules: Arc::new(default_rules()),
+            rules: default_rules(),
             num_threads: 1,
         }
     }
 
     pub fn with_rules<I: Into<Vec<Box<dyn Rule>>>>(rules: I) -> Self {
         Self {
-            rules: Arc::new(rules.into()),
+            rules: rules.into(),
             num_threads: 1,
         }
     }
@@ -85,12 +84,12 @@ impl CoverageFixer {
 
         debugln!("Fixing package coverage");
 
+        let num_files = data.file_coverages.len();
         let mut pool = Pool::new(self.num_threads as u32);
         let (tx, rx) = channel::<Result<(), Error>>();
 
-        pool.scoped(|scoped| -> Result<(), Error> {
+        pool.scoped(|scoped| {
             for file_cov in &mut data.file_coverages {
-                let rules = Arc::clone(&self.rules);
                 let mut task = move || {
                     let path = file_cov.path();
                     debugln!("Processing file {:?}", path);
@@ -100,7 +99,7 @@ impl CoverageFixer {
                     file_cov.line_coverages.sort_by_key(|v| v.line_number);
                     file_cov.branch_coverages.sort_by_key(|v| v.line_number);
 
-                    for rule in rules.iter() {
+                    for rule in self.rules.iter() {
                         rule.fix_file_coverage(&source, file_cov);
                     }
 
@@ -113,15 +112,13 @@ impl CoverageFixer {
                 let tx = tx.clone();
                 scoped.execute(move || tx.send(task()).unwrap());
             }
+        });
 
-            for res in rx.recv() {
-                if res.is_err() {
-                    return res;
-                }
+        for res in rx.iter().take(num_files) {
+            if res.is_err() {
+                return res;
             }
-
-            Ok(())
-        })?;
+        }
 
         let new = CoverageSummary::new(data);
 
