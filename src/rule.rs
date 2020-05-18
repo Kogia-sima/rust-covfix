@@ -1,5 +1,4 @@
 use proc_macro2::TokenTree;
-use regex::Regex;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
@@ -31,18 +30,37 @@ pub trait Rule: Send + Sync {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage);
 }
 
-pub struct CloseBlockRule {
-    reg: Regex,
-}
+pub struct CloseBlockRule;
 
 impl CloseBlockRule {
     pub fn new() -> Self {
-        Self {
-            reg: Regex::new(
-                r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-            )
-            .unwrap(),
+        Self
+    }
+
+    fn match_line(&self, line: &str) -> bool {
+        let mut it = line.as_bytes().iter();
+        while let Some(b) = it.next() {
+            match *b {
+                b' ' | b'\t' | b'}' | b')' | b';' | b'{' => {}
+                b'/' => {
+                    if it.as_slice().starts_with(b"/") {
+                        break;
+                    } else {
+                        return false;
+                    }
+                }
+                b'e' => {
+                    if it.as_slice().starts_with(b"lse") {
+                        it.nth(2);
+                    } else {
+                        return false;
+                    }
+                }
+                _ => return false,
+            }
         }
+
+        true
     }
 }
 
@@ -53,7 +71,7 @@ impl Rule for CloseBlockRule {
                 continue;
             }
 
-            if self.reg.is_match(entry.line) {
+            if self.match_line(entry.line) {
                 if let Some(line_cov) = entry.line_cov {
                     line_cov.count = None;
                 }

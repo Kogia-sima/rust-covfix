@@ -14,7 +14,6 @@ error_chain! {
         FmtError(fmt::Error);
         IoError(io::Error);
         ParseError(syn::Error);
-        RegexError(regex::Error);
     }
 
     // Custom errors
