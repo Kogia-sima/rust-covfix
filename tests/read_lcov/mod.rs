@@ -1,4 +1,5 @@
 use super::WorkSpace;
+use pretty_assertions::assert_eq;
 
 use rust_covfix::{
     parser::LcovParser, BranchCoverage, CoverageReader, FileCoverage, LineCoverage, PackageCoverage,
