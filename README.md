@@ -196,7 +196,9 @@ if a > 0 {
 
 #### test
 
-module block named `test` or `tests` which has attribute `cfg(test)` will be ignored
+module block named `test` or `tests` which has attribute `cfg(test)` will be ignored.
+
+all functions with `#[test]` attribute will be also ignored.
 
 ```rust
 #[cfg(test)]
