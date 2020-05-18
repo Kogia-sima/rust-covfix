@@ -78,25 +78,25 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
+#[derive(Default)]
 struct Arguments {
     input_file: PathBuf,
     output_file: Option<PathBuf>,
     root: Option<PathBuf>,
     rules: Option<String>,
     nofix: bool,
+    num_threads: usize,
     verbose: bool,
 }
 
 impl Arguments {
     fn parse() -> Result<Arguments, Error> {
-        let mut args = Arguments {
-            root: None,
-            input_file: PathBuf::new(),
-            output_file: None,
-            rules: None,
-            nofix: false,
-            verbose: false,
-        };
+        let mut args = Arguments::default();
+
+        #[cfg(feature = "parallel")]
+        {
+            args.num_threads = num_cpus::get();
+        }
 
         let mut ap = ArgumentParser::new();
         ap.set_description("Rust coverage fixer");
@@ -127,6 +127,14 @@ impl Arguments {
             StoreOption,
             "use specified rules to fix coverages. Valid names are [close, test, loop, derive]",
         );
+        #[cfg(feature = "parallel")]
+        {
+            ap.refer(&mut args.num_threads).metavar("NUM").add_option(
+                &["-j", "--jobs"],
+                Store,
+                "project root directory",
+            );
+        }
 
         ap.parse_args_or_exit();
         drop(ap);
