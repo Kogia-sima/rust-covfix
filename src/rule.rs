@@ -4,7 +4,10 @@ use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
 use syn::visit::Visit;
-use syn::{ExprForLoop, Fields, File, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion};
+use syn::{
+    ExprForLoop, ExprMacro, Fields, File, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion,
+    MacroDelimiter,
+};
 
 use crate::error::*;
 use crate::{BranchCoverage, FileCoverage, LineCoverage};
@@ -294,6 +297,68 @@ impl<'ast, 'a> Visit<'ast> for DeriveLoopInner<'a> {
     }
 }
 
+pub struct UnreachableRule;
+
+impl UnreachableRule {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Rule for UnreachableRule {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
+        let mut inner = UnreachableRuleInner { file_cov };
+        inner.visit_file(&source.ast);
+    }
+}
+
+struct UnreachableRuleInner<'a> {
+    file_cov: &'a mut FileCoverage,
+}
+
+impl<'a> UnreachableRuleInner<'a> {
+    fn ignore_range(&mut self, start: usize, end: usize) {
+        for line_cov in self
+            .file_cov
+            .line_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
+        {
+            line_cov.count = None;
+        }
+
+        for branch_cov in self
+            .file_cov
+            .branch_coverages
+            .iter_mut()
+            .skip_while(|e| e.line_number < start)
+            .take_while(|e| e.line_number <= end)
+        {
+            branch_cov.taken = None;
+        }
+    }
+}
+
+impl<'ast, 'a> Visit<'ast> for UnreachableRuleInner<'a> {
+    fn visit_expr_macro(&mut self, expr: &'ast ExprMacro) {
+        if let Some(ident) = expr.mac.path.get_ident() {
+            if ident == "unreachable" {
+                let start = ident.span().start().line;
+                let end = match expr.mac.delimiter {
+                    MacroDelimiter::Paren(ref p) => p.span.end().line,
+                    MacroDelimiter::Brace(ref b) => b.span.end().line,
+                    MacroDelimiter::Bracket(ref b) => b.span.end().line,
+                };
+                self.ignore_range(start, end);
+                return;
+            }
+        }
+
+        syn::visit::visit_expr_macro(self, expr);
+    }
+}
+
 pub struct CommentRule;
 
 impl CommentRule {
@@ -386,6 +451,7 @@ pub fn default_rules() -> Vec<Box<dyn Rule>> {
         Box::new(TestRule::new()),
         Box::new(LoopRule::new()),
         Box::new(DeriveRule::new()),
+        Box::new(UnreachableRule::new()),
         Box::new(CommentRule::new()),
     ]
 }
@@ -402,6 +468,9 @@ pub fn from_str(s: &str) -> Result<Box<dyn Rule>, Error> {
     }
     if s == "derive" {
         return Ok(Box::new(DeriveRule::new()));
+    }
+    if s == "unreachable" {
+        return Ok(Box::new(UnreachableRule::new()));
     }
     if s == "comment" {
         return Ok(Box::new(CommentRule::new()));
@@ -648,6 +717,7 @@ mod tests {
         assert!(super::from_str("test").is_ok());
         assert!(super::from_str("loop").is_ok());
         assert!(super::from_str("derive").is_ok());
+        assert!(super::from_str("unreachable").is_ok());
         assert!(super::from_str("comment").is_ok());
         assert!(super::from_str("").is_err());
         assert!(super::from_str("derives").is_err());
