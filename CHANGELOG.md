@@ -1,4 +1,17 @@
 
+<a name="v0.2.1"></a>
+## [v0.2.1](https://github.com/Kogia-sima/rust-covfix/compare/v0.2.0...v0.2.1) (2020-05-18)
+
+### Bug Fixes
+
+* Fix RUSTFLAGS envvar
+
+### Features
+
+* Ignore functions with \#[test] attribute
+* Add UnreachableRule
+
+
 <a name="v0.2.0"></a>
 ## [v0.2.0](https://github.com/Kogia-sima/rust-covfix/compare/v0.1.1...v0.2.0) (2020-04-21)
 
