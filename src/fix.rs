@@ -29,6 +29,7 @@ impl CoverageFixer {
         }
     }
 
+    #[cfg(feature = "parallel")]
     pub fn set_num_threads(&mut self, num_threads: usize) {
         self.num_threads = num_threads;
     }

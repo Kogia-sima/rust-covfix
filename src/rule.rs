@@ -2,7 +2,6 @@ use proc_macro2::TokenTree;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
-use std::str::Lines;
 use syn::visit::Visit;
 use syn::{
     ExprForLoop, ExprMacro, Fields, File, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion,
@@ -510,7 +509,7 @@ struct CoverageEntry<'a, 'b> {
 #[derive(Clone)]
 struct PerLineIterator<'a, 'b> {
     line_number: usize,
-    lines: Lines<'a>,
+    lines: Vec<&'a str>,
     lp: *mut LineCoverage,
     lp_end: *mut LineCoverage,
     bp: *mut BranchCoverage,
@@ -526,8 +525,8 @@ impl<'a, 'b> PerLineIterator<'a, 'b> {
         let bp_end = unsafe { bp.add(file_cov.branch_coverages.len()) };
 
         Self {
-            line_number: 0,
-            lines: source.lines(),
+            line_number: 1,
+            lines: source.lines().collect(),
             lp,
             bp,
             lp_end,
@@ -540,24 +539,15 @@ impl<'a, 'b> PerLineIterator<'a, 'b> {
 impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
     type Item = CoverageEntry<'a, 'b>;
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        self.nth(0)
-    }
-
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        let line = match self.lines.nth(n) {
-            Some(l) => l,
-            None => return None,
-        };
-        self.line_number += n + 1;
+        if self.line_number > self.lines.len() {
+            return None;
+        }
 
         unsafe {
-            // line coverage at current line
-            while self.lp < self.lp_end && (*self.lp).line_number < self.line_number {
-                self.lp = self.lp.add(1);
-            }
+            let line = self.lines.get_unchecked_mut(self.line_number - 1);
 
+            // line coverage at current line
             let line_cov = if self.lp < self.lp_end && (*self.lp).line_number == self.line_number {
                 let val = Some(&mut *self.lp);
                 self.lp = self.lp.add(1);
@@ -567,24 +557,21 @@ impl<'a, 'b> Iterator for PerLineIterator<'a, 'b> {
             };
 
             // branch coverages at current line
-            while self.bp < self.bp_end && (*self.bp).line_number < self.line_number {
-                self.bp = self.bp.add(1);
-            }
-
             let branch_covs = if self.bp < self.bp_end && (*self.bp).line_number == self.line_number
             {
                 let start = self.bp;
                 self.bp = self.bp.add(1);
+                let mut count = 1;
                 while self.bp < self.bp_end && (*self.bp).line_number == self.line_number {
                     self.bp = self.bp.add(1);
+                    count += 1;
                 }
-                ::std::slice::from_raw_parts_mut(
-                    start,
-                    (self.bp as usize - start as usize) / std::mem::size_of::<BranchCoverage>(),
-                )
+                ::std::slice::from_raw_parts_mut(start, count)
             } else {
                 &mut []
             };
+
+            self.line_number += 1;
 
             Some(CoverageEntry {
                 line,
