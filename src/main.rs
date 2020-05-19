@@ -48,7 +48,11 @@ fn run() -> Result<(), Error> {
         }
         None => CoverageFixer::default(),
     };
-    fixer.set_num_threads(options.num_threads);
+
+    #[cfg(feature = "parallel")]
+    {
+        fixer.set_num_threads(options.num_threads);
+    }
 
     debugln!("Reading data file {:?}", options.input_file);
 
