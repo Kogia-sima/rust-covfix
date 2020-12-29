@@ -142,7 +142,7 @@ cargo test --all-features
 
 if [ "$TRAVIS_RUST_VERSION" = "nightly" ] && [ -z "$TRAVIS_TAG" ]; then
   # collect coverages
-  zip -0 ccov.zip `find . \( -name "rust_covfix*.gc*" -o -name "test-*.gc*" \) -print`
+  zip -0 ccov.zip `find . \( -name "YOUR_PROJECT_NAME*.gc*" -o -name "test-*.gc*" \) -print`
   ./grcov ccov.zip -s . -t lcov --llvm --branch --ignore-not-existing --ignore "/*" --ignore "tests/*" -o lcov.info
 
   # fix coverage using rust-covfix
@@ -197,6 +197,51 @@ codecov:
     # however this job seems to be more tricky than we hoped.
     - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_P_TOKEN" -f lcov-w-branch_correct.info
     - cp *.info /artifacts # this is to output the report files, for the debug purposes
+```
+
+#### Use rust-covfix on GitHub actions
+
+```yaml
+name: Coverage
+
+on: [push, pull_request]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          target: x86_64-unknown-linux-gnu
+          toolchain: nightly
+          override: true
+      - name: Install grcov
+        run: curl -L https://github.com/mozilla/grcov/releases/download/v0.6.1/grcov-linux-x86_64.tar.bz2 | tar jxf -
+      - name: Install rust-covfix
+        run: |
+          curl -L https://github.com/Kogia-sima/rust-covfix/releases/download/v0.2.1/rust-covfix-linux-x86_64.tar.xz |tar Jxf -
+          mv rust-covfix-linux-x86_64/rust-covfix ./
+      - name: Test all crates
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -C panic=abort
+          RUSTDOCFLAGS: -C panic=abort
+        run: |
+          cargo build --all-features --workspace
+          cargo test --all-features --workspace
+      - name: collect coverages
+        run: |
+          zip -0 ccov.zip `find . \( -name "YOUR_PROJECT_NAME*.gc*" -o -name "test-*.gc*" \) -print`
+          ./grcov ccov.zip --llvm --branch -t lcov -o lcov.info --ignore "/*" --ignore "sailfish-tests/*"
+      - name: fix coverages
+        run: ./rust-covfix -o lcov.info lcov.info
+      - name: upload coverage
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./lcov.info
 ```
 
 ## Why is this project developed as a standalone package?
