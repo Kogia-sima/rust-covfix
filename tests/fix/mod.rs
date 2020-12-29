@@ -1,6 +1,7 @@
 use super::WorkSpace;
 use pretty_assertions::assert_eq;
 
+use rust_covfix::rule;
 use rust_covfix::{BranchCoverage, CoverageFixer, FileCoverage, LineCoverage, PackageCoverage};
 
 macro_rules! line_coverages {
@@ -121,7 +122,6 @@ fn tests_mod() {
 
     let expected_branch_covs = branch_coverages!(
         22 => true,
-        22 => false,
         40 => true,
         40 => false,
     );
@@ -420,6 +420,57 @@ fn unreachable() {
         coverage.file_coverages()[0].line_coverages(),
         &*expected_line_covs
     );
+
+    assert_eq!(
+        coverage.file_coverages()[0].branch_coverages(),
+        &*expected_branch_covs
+    );
+}
+
+#[test]
+fn assert() {
+    let ws = WorkSpace::from_template("./tests/fix");
+    let source_file = ws.path().join("assert.rs");
+
+    let original_branch_covs = branch_coverages!(
+        8 => true,
+        8 => true,
+        14 => true,
+        14 => true,
+        15 => true,
+        15 => false,
+        21 => true,
+        21 => true,
+        22 => false,
+        22 => true,
+        28 => true,
+        28 => false,
+        29 => false,
+        29 => false,
+    );
+
+    let expected_branch_covs = branch_coverages!(
+        8 => true,
+        8 => true,
+        14 => true,
+        14 => true,
+        15 => true,
+        21 => true,
+        21 => true,
+        22 => true,
+        28 => true,
+        28 => false,
+        29 => false,
+    );
+
+    let mut coverage = PackageCoverage::new(vec![FileCoverage::new(
+        &source_file,
+        Vec::new(),
+        original_branch_covs,
+    )]);
+
+    let fixer = CoverageFixer::with_rules(vec![rule::from_str("assert").unwrap()]);
+    fixer.fix(&mut coverage).unwrap();
 
     assert_eq!(
         coverage.file_coverages()[0].branch_coverages(),
