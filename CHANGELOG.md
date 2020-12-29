@@ -1,3 +1,10 @@
+<a name="v0.2.2"></a>
+## [v0.2.2](https://github.com/Kogia-sima/rust-covfix/compare/v0.2.1...v0.2.2) (2020-12-30)
+
+### Features
+
+* Add AssertRule
+* Fix coverages in parallel (controlled by --jobs flag)
 
 <a name="v0.2.1"></a>
 ## [v0.2.1](https://github.com/Kogia-sima/rust-covfix/compare/v0.2.0...v0.2.1) (2020-05-18)

@@ -1,11 +1,10 @@
 use proc_macro2::TokenTree;
-use regex::Regex;
 use std::fs;
 use std::marker::PhantomData;
 use std::path::Path;
 use syn::visit::Visit;
 use syn::{
-    ExprForLoop, ExprMacro, Fields, File, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion,
+    ExprForLoop, ExprMacro, Fields, File, Ident, ItemEnum, ItemFn, ItemMod, ItemStruct, ItemUnion,
     MacroDelimiter,
 };
 
@@ -27,22 +26,41 @@ impl SourceCode {
     }
 }
 
-pub trait Rule {
+pub trait Rule: Send + Sync {
     fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage);
 }
 
-pub struct CloseBlockRule {
-    reg: Regex,
-}
+pub struct CloseBlockRule;
 
 impl CloseBlockRule {
     pub fn new() -> Self {
-        Self {
-            reg: Regex::new(
-                r"^(?:\s*\}(?:\s*\))*(?:\s*;)?|\s*(?:\}\s*)?else(?:\s*\{)?)?\s*(?://.*)?$",
-            )
-            .unwrap(),
+        Self
+    }
+
+    fn match_line(&self, line: &str) -> bool {
+        let mut it = line.as_bytes().iter();
+        while let Some(b) = it.next() {
+            match *b {
+                b' ' | b'\t' | b'}' | b')' | b';' | b'{' => {}
+                b'/' => {
+                    if it.as_slice().starts_with(b"/") {
+                        break;
+                    } else {
+                        return false;
+                    }
+                }
+                b'e' => {
+                    if it.as_slice().starts_with(b"lse") {
+                        it.nth(2);
+                    } else {
+                        return false;
+                    }
+                }
+                _ => return false,
+            }
         }
+
+        true
     }
 }
 
@@ -53,7 +71,7 @@ impl Rule for CloseBlockRule {
                 continue;
             }
 
-            if self.reg.is_match(entry.line) {
+            if self.match_line(entry.line) {
                 if let Some(line_cov) = entry.line_cov {
                     line_cov.count = None;
                 }
@@ -359,6 +377,68 @@ impl<'ast, 'a> Visit<'ast> for UnreachableRuleInner<'a> {
     }
 }
 
+pub struct AssertRule;
+
+impl AssertRule {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl Rule for AssertRule {
+    fn fix_file_coverage(&self, source: &SourceCode, file_cov: &mut FileCoverage) {
+        let mut inner = AssertRuleInner {
+            file_cov,
+            next_idx: 0,
+        };
+        inner.visit_file(&source.ast);
+    }
+}
+
+struct AssertRuleInner<'a> {
+    file_cov: &'a mut FileCoverage,
+    next_idx: usize,
+}
+
+impl<'ast, 'a> Visit<'ast> for AssertRuleInner<'a> {
+    fn visit_expr_macro(&mut self, expr: &'ast ExprMacro) {
+        fn is_assert(name: &Ident) -> bool {
+            const NAMES: &[&str] = &[
+                "assert",
+                "assert_eq",
+                "assert_ne",
+                "debug_assert",
+                "debug_assert_eq",
+                "debug_assert_ne",
+            ];
+
+            NAMES.iter().any(|s| name == *s)
+        }
+
+        if let Some(ident) = expr.mac.path.get_ident() {
+            if is_assert(ident) {
+                let start = ident.span().start().line;
+
+                let it = self.file_cov.branch_coverages[self.next_idx..]
+                    .iter_mut()
+                    .skip_while(|e| e.line_number < start)
+                    .take_while(|e| e.line_number == start);
+
+                for branch in it {
+                    if branch.taken == Some(false) {
+                        branch.taken = None;
+                        return;
+                    }
+                }
+
+                return;
+            }
+        }
+
+        syn::visit::visit_expr_macro(self, expr);
+    }
+}
+
 pub struct CommentRule;
 
 impl CommentRule {
@@ -452,6 +532,7 @@ pub fn default_rules() -> Vec<Box<dyn Rule>> {
         Box::new(LoopRule::new()),
         Box::new(DeriveRule::new()),
         Box::new(UnreachableRule::new()),
+        Box::new(AssertRule::new()),
         Box::new(CommentRule::new()),
     ]
 }
@@ -471,6 +552,9 @@ pub fn from_str(s: &str) -> Result<Box<dyn Rule>, Error> {
     }
     if s == "unreachable" {
         return Ok(Box::new(UnreachableRule::new()));
+    }
+    if s == "assert" {
+        return Ok(Box::new(AssertRule::new()));
     }
     if s == "comment" {
         return Ok(Box::new(CommentRule::new()));

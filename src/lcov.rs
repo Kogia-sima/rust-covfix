@@ -102,8 +102,8 @@ impl CoverageReader for LcovParser {
 
                     let file_coverage = FileCoverage::new(
                         filepath,
-                        line_coverages.drain(..).collect(),
-                        branch_coverages.drain(..).collect(),
+                        take_vec(&mut line_coverages),
+                        take_vec(&mut branch_coverages),
                     );
                     file_coverages.push(file_coverage);
                 }
@@ -262,4 +262,10 @@ impl LcovParser {
         Ok(())
     }
     // cov:end-ignore-branch
+}
+
+fn take_vec<T>(vec: &mut Vec<T>) -> Vec<T> {
+    let mut new_vec = Vec::new();
+    std::mem::swap(vec, &mut new_vec);
+    new_vec
 }

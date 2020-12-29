@@ -1,4 +1,5 @@
 use super::WorkSpace;
+use pretty_assertions::assert_eq;
 use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
@@ -64,15 +65,7 @@ fn no_rule() {
         .output()
         .unwrap();
 
-    // assert!(result.status.success());
-    assert_eq!(
-        String::from_utf8(result.stderr).unwrap(),
-        r"Coverages are fixed successfully!
-  line:   94.44% (17 of 18 lines)    => 94.44% (17 of 18 lines)
-  branch: 57.14% (4 of 7 branches) => 57.14% (4 of 7 branches)
-
-"
-    );
+    assert!(result.status.success());
 
     let expected_content = fs::read_to_string(lcov2).unwrap();
     let content = String::from_utf8(result.stdout).unwrap();

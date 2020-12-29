@@ -66,6 +66,7 @@ fn copy_dir_contents(p1: &Path, p2: &Path) {
 mod fix;
 mod guess_game;
 mod invalid_operations;
+mod multiple_files;
 mod read_lcov;
 mod workspace;
 mod write_lcov;

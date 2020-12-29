@@ -1,4 +1,5 @@
 use super::WorkSpace;
+use pretty_assertions::assert_eq;
 use std::fs;
 
 use rust_covfix::{
